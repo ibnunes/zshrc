@@ -2,11 +2,11 @@
 
 Personalized configuration of `zsh`.
 
-It has nothing really special about it. It was created as a personal repository to have everything ready to use for whenever I format my PCs. However, I figured it could be useful for more people because why the hell not.
+It has nothing really special about it. It was created as a personal repository to have everything ready to use for whenever we format our PCs. However, we figured it could be useful for more people because why the hell not.
 
 Enjoy it!
 
-* **Author:** Igor Nunes, a.k.a. thoga31
+* **Authors:** Igor Nunes, Pedro Cavaleiro
 * **License:** [The Unlicense](LICENSE.md)
 
 
@@ -43,6 +43,6 @@ Each `*.zsh` file contains scripts for specific purposes.
 
 Anyone can contribute and/or fork from this repository.
 
-**I invite you to contribute directly to this repository**, though, in order to mantain it as a centralized repo with plenty of options for everyone.
+**We invite you to contribute directly to this repository**, though, in order to mantain it as a centralized repo with plenty of options for everyone.
 
 Create new `*.zsh` files to add to the `.zshrc.d` folder.
