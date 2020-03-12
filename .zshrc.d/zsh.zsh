@@ -60,7 +60,7 @@ function zshrc {
             rm -f "$HOME"/.zshrc.d/zsh.zsh
             eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/zsh.zsh -o "$HOME"/.zshrc.d/zsh.zsh"
             eval "zshrc -r"
-            eval "zsh script updated"
+            echo "zsh script updated"
             ;;
 	"-h")
             echo "+------------+"
