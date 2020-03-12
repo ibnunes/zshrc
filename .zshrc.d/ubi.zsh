@@ -12,5 +12,8 @@ ubi() {
         "so")
             eval "cd ~/SO"
             ;;
+        "lc")
+            eval "cd ~/LOGICA"
+            ;;
     esac
 }
