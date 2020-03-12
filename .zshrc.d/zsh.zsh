@@ -75,6 +75,7 @@ function zshrc {
             echo "-a\t\tAdds a new alias to the alias configuration file\n\t\tIt requires two parameters <alias_name> and <command>"
             echo "--create-config\tCreates a new confign file"
             echo "--multi-alias\tCreates a new multi alias script"
+	    echo "-u\t\tUpdates this script
             echo "-h\t\tShows the help menu"
             ;;
         *)
