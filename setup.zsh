@@ -52,7 +52,7 @@ if [ $customMultiAliasScript = "y" ] && [ $customMultiAliasScript = "Y" ]; then
     do
         read -p "Enter the multi alias name: " multiAliasName
         echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
-        echo "\nfunction $multiAliasName {\n\tcase \$1" >> $HOME/.zshrc.d/$multiAliasName.zsh
+        echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
         exitFlag="n"
         while [ $exitFlag = "n" ]
         do
