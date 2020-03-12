@@ -16,6 +16,9 @@ The file `.zshrc` contains a small script that runs through the folder `.zshrc.d
 
 Each `*.zsh` file contains scripts for specific purposes.
 
+## Installing without cloning
+
+Installation without cloning the repository is available check the [releases]() tab to view the latest release or the [wiki](https://github.com/thoga31/zshrc/wiki/Installation) for a detailed information about the installation
 
 ## How to use
 
