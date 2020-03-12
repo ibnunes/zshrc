@@ -55,7 +55,14 @@ function zshrc {
                 echo ${$(basename -- "$cfg")%.*}
             done
             ;;
-		"-h")
+        "-u")
+            echo "Updating zsh script..."
+            rm -f "$HOME"/.zshrc.d/zsh.zsh
+            eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/zsh.zsh -o "$HOME"/.zshrc.d/zsh.zsh"
+            eval "zshrc -r"
+            eval "zsh script updated"
+            ;;
+	"-h")
             echo "+------------+"
             echo "| zshrc help |"
             echo "+------------+"
@@ -71,7 +78,7 @@ function zshrc {
             echo "-h\t\tShows the help menu"
             ;;
         *)
-		eval "zshrc -h"
-		;;
+			eval "zshrc -h"
+			;;
 	esac
 }
