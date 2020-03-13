@@ -3,7 +3,7 @@ eval "clear"
 
 echo "ZSH Custom Configurations"
 echo ""
-read "?Do you want to clear your ser zsh configuration file (.zshrc) file? (y/n)" clearZshrc
+read "?Do you want to clear your ser zsh configuration file (.zshrc) file? (y/n) " clearZshrc
 
 if [ $clearZshrc = "y" ] || [ $clearZshrc = "Y" ]; then
     echo "Clearing user zsh configuration file"
