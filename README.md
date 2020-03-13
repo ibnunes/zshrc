@@ -18,7 +18,11 @@ Each `*.zsh` file contains scripts for specific purposes.
 
 ## Installing without cloning
 
-Installation without cloning the repository is available check the [releases](https://github.com/thoga31/zshrc/releases/tag/1.0.0) tab to view the latest release or the [wiki](https://github.com/thoga31/zshrc/wiki/Installation) for a detailed information about the installation
+To install the scripts without cloning just enter the following command into the ZShell
+
+`zsh -c "$(curl -fsSL https://raw.githubusercontent.com/thoga31/zshrc/master/setup.zsh)"`
+
+More information available on the [wiki](https://github.com/thoga31/zshrc/wiki/Installation) or check the [releases](https://github.com/thoga31/zshrc/releases/tag/1.0.0) page
 
 ## How to use
 
