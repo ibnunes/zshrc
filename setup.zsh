@@ -37,7 +37,7 @@ if [ $openGlCompilation = "y" ] && [ $openGlCompilation = "Y" ]; then
     eval "curl -s https://github.com/thoga31/zshrc/blob/master/.zshrc.d/gl.zsh -o "$HOME"/.zshrc.d/gl.zsh"
 fi
 
-echo "?Install Package manager aliases? (y/n) " pkgManagerAliases
+read "?Install Package manager aliases? (y/n) " pkgManagerAliases
 if [ $pkgManagerAliases = "y" ] && [ $pkgManagerAliases = "Y" ]; then
     eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/up.zsh -o "$HOME"/.zshrc.d/up.zsh"
 fi
