@@ -34,7 +34,7 @@ fi
 
 read "?Install OpenGL compilation with g++? (y/n) " openGlCompilation
 if [ $openGlCompilation = "y" ] && [ $openGlCompilation = "Y" ]; then
-    eval "curl -s https://github.com/thoga31/zshrc/blob/master/.zshrc.d/gl.zsh -o "$HOME"/.zshrc.d/gl.zsh"
+    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/gl.zsh -o "$HOME"/.zshrc.d/gl.zsh"
 fi
 
 read "?Install Package manager aliases? (y/n) " pkgManagerAliases
