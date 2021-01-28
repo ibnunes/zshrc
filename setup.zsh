@@ -28,24 +28,24 @@ echo "Installing zsh individual files"
 eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/alias.zsh -o "$HOME"/.zshrc.d/alias.zsh"
 
 read "?Install C compilation with gcc? (y/n) " customCCompilationScript
-if [ $customCCompilationScript = "y" ] && [ $customCCompilationScript = "Y" ]; then
+if [ $customCCompilationScript = "y" ] || [ $customCCompilationScript = "Y" ]; then
     eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/cc.zsh -o "$HOME"/.zshrc.d/cc.zsh"
 fi
 
 read "?Install OpenGL compilation with g++? (y/n) " openGlCompilation
-if [ $openGlCompilation = "y" ] && [ $openGlCompilation = "Y" ]; then
+if [ $openGlCompilation = "y" ] || [ $openGlCompilation = "Y" ]; then
     eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/gl.zsh -o "$HOME"/.zshrc.d/gl.zsh"
 fi
 
 read "?Install Package manager aliases? (y/n) " pkgManagerAliases
-if [ $pkgManagerAliases = "y" ] && [ $pkgManagerAliases = "Y" ]; then
+if [ $pkgManagerAliases = "y" ] || [ $pkgManagerAliases = "Y" ]; then
     eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/up.zsh -o "$HOME"/.zshrc.d/up.zsh"
 fi
 
 echo "Multi alias script"
 echo "The multi alias script will allow to type \"ubi tc\" and the terminal changes to the tc folder that belongs to the ubi collection"
 read "?Create multi alias script? (y/n) " customMultiAliasScript
-if [ $customMultiAliasScript = "y" ] && [ $customMultiAliasScript = "Y" ]; then
+if [ $customMultiAliasScript = "y" ] || [ $customMultiAliasScript = "Y" ]; then
     endFlag="y"
     varStr='$1'
     while [ $endFlag = "y" ]
@@ -54,7 +54,7 @@ if [ $customMultiAliasScript = "y" ] && [ $customMultiAliasScript = "Y" ]; then
         echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
         echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
         exitFlag="n"
-        while [ $exitFlag = "n" ]
+        while [ $exitFlag = "n" ] || [ $exitFlag = "N" ]
         do
             read "?Alias: " aliasName
             read "?Path: " aliasPath
