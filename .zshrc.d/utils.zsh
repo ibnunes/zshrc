@@ -1,4 +1,4 @@
-alias declare_ansi_escape="declare -A FONT
+declare -A FONT
 FONT=(
     ['reset']=0
     ['bold']=1
@@ -79,15 +79,18 @@ FONT=(
     ['bg_bright_magenta']=105
     ['bg_bright_cyan']=106
     ['bg_bright_white']=107
-)"
-
-declare_ansi_escape
+)
 
 function font() {
     local ESCAPE="\033[§m"
     local PARAM=()
     local CATCH=false
     local COLOR=()
+    local STOP=false
+
+    declare -A LEN2ANSI
+    LEN2ANSI=([1]="5" [3]="2")
+
     for arg in $@; do
         case $arg in
             ("fg"|"bg")
@@ -99,18 +102,7 @@ function font() {
                     COLOR+=($arg)
                 elif $CATCH; then
                     CATCH=false
-                    case ${#COLOR[@]} in
-                        (1)
-                            PARAM+=("5" $COLOR)
-                            ;;
-                        (3)
-                            PARAM+=("2" $COLOR)
-                            ;;
-                        (*)
-                            echo $COLOR
-                            return 1
-                            ;;
-                    esac
+                    PARAM+=($LEN2ANSI[${#COLOR[@]}] $COLOR)
                     PARAM+=($FONT[$arg])
                 else
                     PARAM+=($FONT[$arg])
@@ -118,6 +110,9 @@ function font() {
                 ;;
         esac
     done
+    if ! [ -z "$COLOR" ]; then
+        PARAM+=($LEN2ANSI[${#COLOR[@]}] $COLOR)
+    fi
 
     PARAM=$(IFS=';' ; echo "${^PARAM}")
     echo -n $ESCAPE | sed -r -e "s/§/$PARAM/"
