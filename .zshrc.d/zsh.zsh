@@ -5,7 +5,7 @@
 function zshrc {
 	case $1 in
 		"-c")
-            if [ $# -eq 2 ]; then 
+            if [ $# -eq 2 ]; then
 			    eval "nano ~/.zshrc.d/$2.zsh"
             else
                 eval "nano ~/.zshrc"
@@ -46,7 +46,7 @@ function zshrc {
                 echo "\t\t\"$aliasName\") eval \"cd $aliasPath\"" >> $HOME/.zshrc.d/$multiAliasName.zsh
                 echo "\t\t;;" >> $HOME/.zshrc.d/$multiAliasName.zsh
                 read "?End multi alias script creation? (y/n) " exitFlag
-            done            
+            done
             echo "\tesac\n}" >> $HOME/.zshrc.d/$multiAliasName.zsh
             eval "zshrc -r"
             ;;
