@@ -1,7 +1,7 @@
 function hdd() {
     echo ""     # Just some spacing for looks
 
-    local HDD_EXCEPTIONS="sde"
+    local HDD_EXCEPTIONS=""     # <-- Add exceptions separated by spaces. e.g. "sdb sdf sdh"
 
     function hdd_printf() {
         if [ -z $1 ]; then
@@ -199,6 +199,7 @@ function hdd() {
     unset -f hdd_get_exceptions
     unset -f hdd_get_permissions
     unset -f hdd_execute
+    unset -f hdd_help
 
     echo ""     # Just some more spacing for those looks
     return $HDD_SUCCESS
