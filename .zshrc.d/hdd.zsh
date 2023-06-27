@@ -15,7 +15,7 @@ function hdd() {
         if [ ! -z $1 ]; then
             echo $1
         else
-            echo "    ⚠️  Operation stopped for unknown reasons."
+            echo "     Operation stopped for unknown reasons."
         fi
         HDD_SUCCESS=1
     }
@@ -41,19 +41,15 @@ function hdd() {
 
     function hdd_get_permissions() {
         if [[ $(sudo echo -n) ]]; then
-            echo "   ❌  Invalid password. Cannot execute."
+            echo "     Invalid password. Cannot execute."
             return 1
         else
-            echo "   🔐  Permission granted."
+            echo "     Permission granted."
             return 0
         fi
     }
 
     function hdd_execute() {
-        echo "   ⌛️  Execution…
-      🔶  Operation: $1
-      🔶  Drives:    ${@:2}"
-
         local HDD_HDPARM=$(sudo hdparm $1 ${@:2})
         HDD_SUCCESS=$?
 
@@ -81,17 +77,17 @@ function hdd() {
                     )
 
                 HDD_EXECUTE=$(
-                    local HDD_HEADER=$( printf "%20s§+§%30s" '' '' | sed -re 's/\ /-/g' -e 's/§/\ /g' )
-                    HDD_HEADER=$( printf "%9s + %s +" '' $HDD_HEADER )
+                    local HDD_HEADER=$( printf "%12sC%17s" '' '' | sed -re 's/\ /─/g' )
+                    HDD_HEADER=$( printf "%5sL%sR" '' $HDD_HEADER )
 
-                    echo $HDD_HEADER
-                    printf "%9s | %20s | %30s |\n" '' 'DRIVE' 'STATUS'
-                    echo $HDD_HEADER
+                    echo $HDD_HEADER | sed -e 's/L/┌/g' -e 's/R/┐/g' -e 's/C/┬/g'
+                    printf "%5s│ %10s │ %15s │\n" '' 'DRIVE' 'STATUS'
+                    echo $HDD_HEADER | sed -e 's/L/├/g' -e 's/R/┤/g' -e 's/C/┼/g'
                     for line in $HDD_OUTPUT; do
                         e=(${(s/ /)line})
-                        printf "%9s | %20s | §§§%27s |\n" " " "${e[1]}" "${e[2]}"
+                        printf "%5s│ %10s │ §§§%12s │\n" " " "${e[1]}" "${e[2]}"
                     done
-                    echo $HDD_HEADER
+                    echo $HDD_HEADER | sed -e 's/L/└/g' -e 's/R/┘/g' -e 's/C/┴/g'
                 )
 
                 echo $HDD_EXECUTE                               |
@@ -107,14 +103,17 @@ function hdd() {
     }
 
     function hdd_help() {
-        echo "   Usage:  hdd OPERATION [-f | --force] [DRIVES…]
-      OPERATION        check/status     Checks drives statuses in a table.
-                       standby          Sends standby signal to drives.
+        echo "   zshrc's HDD status management helper
+   ──────────────────────────────────────────────────────────────────────────
+   Usage:  hdd OPERATION [-f | --force] [DRIVES…]
+   Arguments:
+      OPERATION ───┬── check/status     Checks drives statuses in a table.
+                   └── standby          Sends standby signal to drives.
       -f | --force                      Force mode: ignore exceptions.
-      DRIVES…                           Drives separated by space (e.g. \"sda sdc sdd\")
+      DRIVES…                           Drives separated by space
 "
-        echo "   💿  Available drives: $(hdd_printf $(hdd_get_drives))"
-        echo "   🚫  Exceptions:       $(hdd_printf $HDD_EXCLUDE)\n"
+        echo "     Available drives:   $(hdd_printf $(hdd_get_drives))"
+        echo "     Exceptions:         $(hdd_printf $HDD_EXCLUDE)\n"
     }
 
 
@@ -133,15 +132,15 @@ function hdd() {
     if [ $HDD_JUMP -eq 0 ]; then
         case $1 in
             ("check" | "status")
-                echo "   🔷  HDD status check requested."
+                echo "     HDD status check requested."
                 HDD_OPER='-C'
                 ;;
             ("standby")
-                echo "   🔷  HDD standby requested."
+                echo "     HDD standby requested."
                 HDD_OPER='-y'
                 ;;
             (*)
-                hdd_no_operation "   ❌  Invalid arguments provided."
+                hdd_no_operation "     Invalid arguments provided."
                 ;;
         esac
     fi
@@ -162,10 +161,10 @@ function hdd() {
         if [[ $HDD_EXCLUDE != "" ]]; then
             HDD_DRIVES=$(echo $HDD_DRIVES | sed -e "s/$HDD_EXCLUDE//g" )
         fi
-        echo "   🚫  Exceptions:       $(hdd_printf $HDD_EXCLUDE)"
-        echo "   💿  Selected drives:  $(hdd_printf $HDD_DRIVES)"
+        echo "     Exceptions:        $(hdd_printf $HDD_EXCLUDE)"
+        echo "     Selected drives:   $(hdd_printf $HDD_DRIVES)"
         if [ -z $HDD_DRIVES ]; then
-            echo "   ✅  Nothing to do."
+            echo "     Nothing to do."
             HDD_JUMP=1
         fi
 
@@ -181,9 +180,9 @@ function hdd() {
                 hdd_execute $HDD_OPER ${(s/ /)HDD_DRIVES}
                 local HDD_SUCCESS=$?
                 if [ $HDD_SUCCESS -ne 0 ]; then
-                    hdd_no_operation "\n   ❌  Operation failed."
+                    hdd_no_operation "\n     Operation failed."
                 else
-                    echo "\n   ✅  Operation reported success."
+                    echo "\n     Operation reported success."
                 fi
             fi
         fi
