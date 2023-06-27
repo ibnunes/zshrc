@@ -1,4 +1,6 @@
 function hdd() {
+    echo ""     # Just some spacing for looks
+
     local HDD_EXCEPTIONS="sde"
 
     function hdd_printf() {
@@ -15,7 +17,7 @@ function hdd() {
         if [ ! -z $1 ]; then
             echo $1
         else
-            echo "     Operation stopped for unknown reasons."
+            echo "     $(font fg_red)Operation stopped$(font reset) for unknown reasons."
         fi
         HDD_SUCCESS=1
     }
@@ -41,7 +43,7 @@ function hdd() {
 
     function hdd_get_permissions() {
         if [[ $(sudo echo -n) ]]; then
-            echo "     Invalid password. Cannot execute."
+            echo "     $(font fg_red)Invalid password.$(font reset) Cannot execute."
             return 1
         else
             echo "     Permission granted."
@@ -81,21 +83,21 @@ function hdd() {
                     HDD_HEADER=$( printf "%5sL%sR" '' $HDD_HEADER )
 
                     echo $HDD_HEADER | sed -e 's/L/┌/g' -e 's/R/┐/g' -e 's/C/┬/g'
-                    printf "%5s│ %10s │ %15s │\n" '' 'DRIVE' 'STATUS'
+                    printf "%5s│ $(font bold)%10s$(font reset) │ $(font bold)%-15s$(font reset) │\n" '' 'DRIVE' 'STATUS'
                     echo $HDD_HEADER | sed -e 's/L/├/g' -e 's/R/┤/g' -e 's/C/┼/g'
                     for line in $HDD_OUTPUT; do
                         e=(${(s/ /)line})
-                        printf "%5s│ %10s │ §§§%12s │\n" " " "${e[1]}" "${e[2]}"
+                        printf "%5s│ %10s │ §§§%15s │\n" " " "${e[1]}" "${e[2]}"
                     done
                     echo $HDD_HEADER | sed -e 's/L/└/g' -e 's/R/┘/g' -e 's/C/┴/g'
                 )
 
                 echo $HDD_EXECUTE                               |
                 sed -r                                          \
-                    -e 's/(\§{3})(\s*)(unknown)/❓ \3\2/g'      \
-                    -e 's/(\§{3})(\s*)(active\/idle)/🟢 \3\2/g' \
-                    -e 's/(\§{3})(\s*)(standby)/🟡 \3\2/g'      \
-                    -e 's/(\§{3})(\s*)(sleep)/🔴 \3\2/g'
+                    -e "s/(\§{3})(\s*)(unknown)/$(font fg 238)\3\2$(font reset)/g"      \
+                    -e "s/(\§{3})(\s*)(active\/idle)/$(font fg_green)\3\2$(font reset)/g" \
+                    -e "s/(\§{3})(\s*)(standby)/$(font fg_yellow)\3\2$(font reset)/g"      \
+                    -e "s/(\§{3})(\s*)(sleep)/$(font fg_red)\3\2$(font reset)/g"
                 ;;
         esac
 
@@ -103,17 +105,18 @@ function hdd() {
     }
 
     function hdd_help() {
-        echo "   zshrc's HDD status management helper
+        echo "   $(font bold fg_cyan)                   zshrc's HDD status management helper                   $(font reset)
    ──────────────────────────────────────────────────────────────────────────
-   Usage:  hdd OPERATION [-f | --force] [DRIVES…]
-   Arguments:
-      OPERATION ───┬── check/status     Checks drives statuses in a table.
-                   └── standby          Sends standby signal to drives.
-      -f | --force                      Force mode: ignore exceptions.
-      DRIVES…                           Drives separated by space
+   $(font bold underline)Usage$(font reset):  $(font bg 238) hdd OPERATION [-f | --force] [DRIVES…] $(font reset)
+
+   $(font bold underline)Arguments$(font reset):
+      $(font bg 238) OPERATION $(font reset) ───┬── check/status     $(font fg 249)Checks drives statuses in a table.$(font reset)
+                     └── standby          $(font fg 249)Sends standby signal to drives.$(font reset)
+      $(font bg 238) [-f | --force] $(font reset)                    $(font fg 249)Force mode: ignore exceptions.$(font reset)
+      $(font bg 238) [DRIVES…] $(font reset)                         $(font fg 249)Drives separated by space$(font reset)
 "
-        echo "     Available drives:   $(hdd_printf $(hdd_get_drives))"
-        echo "     Exceptions:         $(hdd_printf $HDD_EXCLUDE)\n"
+        echo "   $(font underline)Available drives$(font reset):   $(font fg 241)$(hdd_printf $(hdd_get_drives))$(font reset)"
+        echo "   $(font underline)Exceptions$(font reset):         $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
     }
 
 
@@ -140,7 +143,7 @@ function hdd() {
                 HDD_OPER='-y'
                 ;;
             (*)
-                hdd_no_operation "     Invalid arguments provided."
+                hdd_no_operation "     $(font fg_red)Invalid arguments provided.$(font reset)"
                 ;;
         esac
     fi
@@ -161,10 +164,10 @@ function hdd() {
         if [[ $HDD_EXCLUDE != "" ]]; then
             HDD_DRIVES=$(echo $HDD_DRIVES | sed -e "s/$HDD_EXCLUDE//g" )
         fi
-        echo "     Exceptions:        $(hdd_printf $HDD_EXCLUDE)"
-        echo "     Selected drives:   $(hdd_printf $HDD_DRIVES)"
+        echo "     $(font bold underline)Exceptions$(font reset):        $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
+        echo "     $(font bold underline)Selected drives$(font reset):   $(font fg 241)$(hdd_printf $HDD_DRIVES)$(font reset)"
         if [ -z $HDD_DRIVES ]; then
-            echo "     Nothing to do."
+            echo "     $(font fg_green)Nothing to do.$(font bold)"
             HDD_JUMP=1
         fi
 
@@ -180,9 +183,9 @@ function hdd() {
                 hdd_execute $HDD_OPER ${(s/ /)HDD_DRIVES}
                 local HDD_SUCCESS=$?
                 if [ $HDD_SUCCESS -ne 0 ]; then
-                    hdd_no_operation "\n     Operation failed."
+                    hdd_no_operation "\n     $(font fg_red)Operation failed.$(font reset)"
                 else
-                    echo "\n     Operation reported success."
+                    echo "\n     $(font fg_green)Operation reported success.$(font reset)"
                 fi
             fi
         fi
@@ -197,5 +200,6 @@ function hdd() {
     unset -f hdd_get_permissions
     unset -f hdd_execute
 
+    echo ""     # Just some more spacing for those looks
     return $HDD_SUCCESS
 }
