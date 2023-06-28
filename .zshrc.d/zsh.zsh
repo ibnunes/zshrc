@@ -97,7 +97,7 @@ function $multiAliasName {
             ;;"
 
         echo "\n   $(font bg 238) $multiAliasName $aliasName $(font reset) will redirect to $(font underline)$aliasPath$(font reset).\n"
-        yesno "   Add more aliases to $(font bg 238) $multiAliasName $(font reset)? "
+        yesno "   Add more aliases to $(font bg 238) $multiAliasName $(font reset)?"
         exitFlag=$?
     done
 

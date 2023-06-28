@@ -46,7 +46,7 @@ for f in $ZSHRC_FILES_ESSENTIAL; do
     curl -s "$ZSHRC_REPO/$ZSHRC_FOLDER/$f.zsh" -o "$ZSHRC_LOCAL_FOLDER/$f.zsh"
 done
 
-yesno "-> Install developer configuration files? "
+yesno "-> Install developer configuration files?"
 if [ $? -eq 0 ]; then
     echo "   Installing developer ZSHRC configuration files…"
     for f in $ZSHRC_FILES_DEV; do
