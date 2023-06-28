@@ -20,7 +20,7 @@ function __zshrc_help() {
    │ $(font bg 238) --create-config $(font reset) │ Creates a new configuration file.                    │
    │                   │ Requires 1 parameter: $(font bg 238) file_name $(font reset).                   │
    │ $(font bg 238) --multi-alias $(font reset)   │ Creates a new multi-alias script.                    │
-   │ $(font bg 238) -u $(font reset)              │ Updates the main $(font underline)zsh.zsh$(font reset) script.                     │
+   │ $(font bg 238) -u $(font reset)              │ Updates zshrc and its internal dependencies.         │
    │ $(font bg 238) -h $(font reset)              │ Shows this help menu.                                │
    └───────────────────┴──────────────────────────────────────────────────────┘
 
@@ -118,15 +118,39 @@ function __zshrc_list() {
 }
 
 function __zshrc_update() {
-    echo -n "   Fetching latest $(font underline)zsh.zsh$(font reset) script…"
-    local ZSH_LATEST=$(curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh)
-    if [ ! -z $ZSH_LATEST ] && [[ $ZSH_LATEST != "$(cat $HOME/.zshrc.d/zsh.zsh)" ]]; then
-        echo -n "   Updating zsh script… "
-        curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh > $HOME/.zshrc.d/zsh.zsh
-        echo "$(font fg_green)OK$(font reset)"
+    ZSHRC_FILES=("zsh" "hdd" "utils")
+
+    echo "\n     $(font bold fg_cyan)ZSHRC updater$(font reset)
+   ┌───────────────────────────────────────────────────────────────────────────
+   │ ZSHRC will check for updates.
+   │
+   │ Since all zshrc files can be freely modified by the user, only these
+   │ files will be automatically checked for updates since they provide
+   │ the main script and its dependencies: $(font bg 238 bold) ${^ZSHRC_FILES} $(font reset).
+   │
+   │ $(font bold bg_yellow) ATTENTION! $(font reset) This action is $(font fg_yellow bold)irreversible$(font reset)!
+"
+
+    yesno "   $(font bold bg_red) CAUTION! $(font reset) Do you want to proceed?"
+    if [ $? -eq 0 ]; then
+        local ZSH_LATEST=
+        echo "\n   Updating dependencies…"
+        for f in $ZSHRC_FILES; do
+            echo "   Fetching latest $(font underline)$f.zsh$(font reset) script…"
+            ZSH_LATEST=$(curl -s "https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/$f.zsh")
+            if [ ! -z $ZSH_LATEST ] && [[ $ZSH_LATEST != "$(cat $HOME/.zshrc.d/$f.zsh)" ]]; then
+                echo -n "      Updating $(font underline)$f.zsh$(font reset) script… "
+                echo $ZSH_LATEST > $HOME/.zshrc.d/$f.zsh
+                echo "$(font fg_green)OK$(font reset)"
+            else
+                echo "      Nothing to do. $(font underline)$f.zsh$(font reset) is up to date."
+            fi
+        done
+        unset -v f
+        echo "   $(font fg_green)Update finalized.$(font reset) zshrc will be now reloaded…\n"
         __zshrc_reload
     else
-        echo "   Nothing to do. You are up to date."
+        echo "\n   $(font yellow)Operation cancelled$(font reset) by the user.\n"
     fi
 }
 
