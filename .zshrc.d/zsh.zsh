@@ -16,17 +16,18 @@ function __zshrc_help() {
    │ $(font bg 238) -r $(font reset)              │ Reloads zsh configurations.                          │
    │ $(font bg 238) -cr $(font reset)             │ Performs $(font bg 238) -c $(font reset) followed by $(font bg 238) -r $(font reset).                      │
    │ $(font bg 238) -a $(font reset)              │ Adds a new alias to the alias configuration file.    │
-   │                   │ It requires 2 parameters: $(font bg 238) alias_name $(font reset), $(font bg 238) command $(font reset).   │
+   │                   │ Requires 2 parameters: $(font bg 238) alias_name $(font reset), $(font bg 238) command $(font reset).      │
    │ $(font bg 238) --create-config $(font reset) │ Creates a new configuration file.                    │
+   │                   │ Requires 1 parameter: $(font bg 238) file_name $(font reset).                   │
    │ $(font bg 238) --multi-alias $(font reset)   │ Creates a new multi-alias script.                    │
    │ $(font bg 238) -u $(font reset)              │ Updates the main $(font underline)zsh.zsh$(font reset) script.                     │
    │ $(font bg 238) -h $(font reset)              │ Shows this help menu.                                │
-   └───────────────────└──────────────────────────────────────────────────────┘
+   └───────────────────┴──────────────────────────────────────────────────────┘
 
    $(font bold underline)Authors$(font reset):     Igor Nunes          https://github.com/ibnunes
                 Pedro Cavaleiro     https://github.com/PedroCavaleiro
 "
-    }
+}
 
 function __zshrc_configure() {
     local ZSHRC_FILE="~/.zshrc"
@@ -96,7 +97,7 @@ function $multiAliasName {
             ;;"
 
         echo "\n   $(font bg 238) $multiAliasName $aliasName $(font reset) will redirect to $(font underline)$aliasPath$(font reset).\n"
-        yesno "   Add more aliases to $(font bg 238)$multiAliasName$(font reset)? "
+        yesno "   Add more aliases to $(font bg 238) $multiAliasName $(font reset)? "
         exitFlag=$?
     done
 
@@ -113,13 +114,20 @@ function __zshrc_list() {
     for cfg in ~/.zshrc.d/*.zsh; do
         echo ${$(basename -- "$cfg")%.*}
     done
+    unset -v cfg
 }
 
 function __zshrc_update() {
-    echo -n "   Updating zsh script… "
-    curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh > $HOME/.zshrc.d/zsh.zsh
-    echo "$(font fg_green)OK$(font reset)"
-    __zshrc_reload
+    echo -n "   Fetching latest $(font underline)zsh.zsh$(font reset) script…"
+    local ZSH_LATEST=$(curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh)
+    if [ ! -z $ZSH_LATEST ] && [[ $ZSH_LATEST != "$(cat $HOME/.zshrc.d/zsh.zsh)" ]]; then
+        echo -n "   Updating zsh script… "
+        curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh > $HOME/.zshrc.d/zsh.zsh
+        echo "$(font fg_green)OK$(font reset)"
+        __zshrc_reload
+    else
+        echo "   Nothing to do. You are up to date."
+    fi
 }
 
 function zshrc {
