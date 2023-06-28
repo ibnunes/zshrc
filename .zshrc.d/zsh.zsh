@@ -61,22 +61,52 @@ function __zshrc_new_config() {
 }
 
 function __zshrc_multialias() {
-    return 0        # Work in progress
+    echo "\n     $(font bold fg_cyan)ZSHRC multi-alias creator$(font reset)
+   ┌───────────────────────────────────────────────────────────────────────────
+   │ A multi-alias is a command with 1 parameter that allows one to redirect to
+   │ folders with ease.
+   │ The multi-alias will be used as such: $(font bg 238) command parameter $(font reset)
+   │ Each $(font bg 238) parameter $(font reset) is defined as a different folder to go to.
+   │ The name of the multi-alias will be the same as the $(font bg 238) command $(font reset).
+"
 
-    read  "?Enter the multi alias name: " multiAliasName
-    echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
-    echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
-    exitFlag="n"
-    while [ $exitFlag = "n" ]
-    do
-        read "?Alias: " aliasName
-        read "?Path: " aliasPath
-        echo "\t\t\"$aliasName\") eval \"cd $aliasPath\"" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        echo "\t\t;;" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        read "?End multi alias script creation? (y/n) " exitFlag
+    local multiAliasName=
+    echo -n "   Enter the $(font underline)multi-alias$(font reset) name (this will be the $(font bg 238) command $(font reset)): "
+    read multiAliasName
+
+    local multiAliasFileContent="# ----------------------------------------
+# $multiAliasName navigation shortcuts
+# ----------------------------------------
+
+function $multiAliasName {
+    case \$1 in"
+
+    local aliasName=
+    local aliasPath=
+    local exitFlag=0
+    while [ $exitFlag -eq 0 ]; do
+        echo -n "\n   Provide the $(font underline)alias$(font reset) (this will be a $(font bg 238) parameter $(font reset)): "
+        read aliasName
+        echo -n "   Provide the $(font underline)path$(font reset) (this is where you want to $(font underline)cd$(font reset) when prompting $(font bg 238) $multiAliasName $aliasName $(font reset)): "
+        read aliasPath
+
+        multiAliasFileContent="$multiAliasFileContent
+        (\"$aliasName\")
+            cd \"$aliasPath\"
+            ;;"
+
+        echo "\n   $(font bg 238) $multiAliasName $aliasName $(font reset) will redirect to $(font underline)$aliasPath$(font reset).\n"
+        yesno "   Add more aliases to $(font bg 238)$multiAliasName$(font reset)? "
+        exitFlag=$?
     done
-    echo "\tesac\n}" >> $HOME/.zshrc.d/$multiAliasName.zsh
-    eval "zshrc -r"
+
+    multiAliasFileContent="$multiAliasFileContent
+    esac
+}"
+
+    echo $multiAliasFileContent > $HOME/.zshrc.d/$multiAliasName.zsh
+    echo "   ────────────────────────────────────────────────────────────────────────────\n"
+    __zshrc_reload
 }
 
 function __zshrc_list() {
