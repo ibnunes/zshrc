@@ -1,5 +1,9 @@
 #!/bin/zsh
 
+echo "ZSHRC Setup                                                     1.1.0-beta"
+echo "──────────────────────────────────────────────────────────────────────────"
+echo "   Loading components…"
+
 function yesno() {
     local answer=
     while [[ ! $answer =~ "y|Y|n|N" ]]; do
@@ -9,76 +13,63 @@ function yesno() {
     [[ $answer =~ 'y|Y' ]] && return 0 || return 1      # 0 for Yes, 1 for No
 }
 
-clear
-echo "ZSH Custom Configurations\n"
+ZSHRC_FILES_ESSENTIAL=(
+    "alias"
+    "hdd"
+    "mobaxterm"
+    "utils"
+    "zsh"
+)
 
-yesno "Do you want to clear your zsh configuration file (.zshrc) file? "
-if [ $? -eq 0 ]; then
-    echo "Clearing user zsh configuration file"
-    rm -f "$HOME"/.zshrc
+ZSHRC_FILES_DEV=(
+    "cc"
+    "cpp"
+    "gl"
+)
+
+ZSH_CONFIG_FILE=".zshrc"
+ZSH_CONFIG_PWD="$HOME/$ZSH_CONFIG_FILE"
+
+ZSHRC_FOLDER=".zshrc.d"
+ZSHRC_LOCAL_FOLDER="$HOME/$ZSHRC_FOLDER"
+
+ZSHRC_REPO="https://raw.githubusercontent.com/ibnunes/zshrc/master/"
+
+
+echo "   Creating .zshrc.d folder in home directory…"
+if [ ! -d $ZSHRC_LOCAL_FOLDER ]; then
+    mkdir -p $ZSHRC_LOCAL_FOLDER
 fi
 
-echo "Installing new zsh configuration file"
-curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc -a $HOME/.zshrc
+echo "   Appending ZSHRC loading code to user's .zshrc…"
+curl -s "$ZSHRC_REPO/$ZSH_CONFIG_FILE" -a $ZSH_CONFIG_PWD
 
-echo "Creating ZSH individual configuration folder"
-if [ ! -d "$HOME/.zshrc.d" ]; then
-    mkdir -p $HOME/.zshrc.d;
-fi
+echo "   Installing essential ZSHRC configuration files…"
+for f in $ZSHRC_FILES_ESSENTIAL; do
+    echo "      $f.zsh"
+    curl -s "$ZSHRC_REPO/$ZSHRC_FOLDER/$f.zsh" -o "$ZSHRC_LOCAL_FOLDER/$f.zsh"
+done
 
-echo "Installing zshrc script"
-curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/zsh.zsh -o $HOME/.zshrc.d/zsh.zsh
-
-echo "Installing zsh individual files"
-curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/alias.zsh -o $HOME/.zshrc.d/alias.zsh
-
-yesno "Install C compilation with gcc? "
+yesno "-> Install developer configuration files? "
 if [ $? -eq 0 ]; then
-    curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/cc.zsh -o $HOME/.zshrc.d/cc.zsh
-fi
-
-yesno "Install OpenGL compilation with g++? "
-if [ $? -eq 0 ]; then
-    eval "curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/gl.zsh -o $HOME/.zshrc.d/gl.zsh"
-fi
-
-
-yesno "Install Package manager aliases? "
-if [ $? -eq 0 ]; then
-    eval "curl -s https://raw.githubusercontent.com/ibnunes/zshrc/master/.zshrc.d/up.zsh -o $HOME/.zshrc.d/up.zsh"
-fi
-
-echo "Multi alias script"
-echo "The multi alias script will allow to type \"ubi tc\" and the terminal changes to the tc folder that belongs to the ubi collection"
-yesno "Create multi alias script? "
-if [ $? -eq 0 ]; then
-    local endFlag=0
-    local varStr='$1'
-    while [ $endFlag -eq 0 ]; do
-        read "?Enter the multi alias name: " multiAliasName
-        echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
-        echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        local exitFlag=1
-        while [ $exitFlag -ne 0 ]; do
-            local aliasName=""
-            local aliasPath=""
-            echo -n "Alias: "
-            read aliasName
-            echo -n "Path: "
-            read aliasPath
-            echo "\t\t\"$aliasName\") eval \"cd $aliasPath\"" >> $HOME/.zshrc.d/$multiAliasName.zsh
-            echo "\t\t;;" >> $HOME/.zshrc.d/$multiAliasName.zsh
-            yesno "End multi alias script creation? (y/N) "
-            exitFlag=$?
-        done
-        echo "\tesac\n}" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        yesno "Create new multi alias script? "
-        endFlag=$?
+    echo "   Installing developer ZSHRC configuration files…"
+    for f in $ZSHRC_FILES_DEV; do
+        echo "      $f.zsh"
+        curl -s "$ZSHRC_REPO/$ZSHRC_FOLDER/$f.zsh" -o "$ZSHRC_LOCAL_FOLDER/$f.zsh"
     done
 fi
 
-echo "Reloading zsh configuration file"
-source $HOME/.zshrc
-echo "\nAll the zsh configuration files were installed and loaded successfully"
+echo "   Reloading zsh configuration…"
+source $ZSH_CONFIG_PWD
 
+echo "   Cleaning up…"
+unset -v ZSHRC_FILES_ESSENTIAL
+unset -v ZSHRC_FILES_DEV
+unset -v ZSH_CONFIG_FILE
+unset -v ZSH_CONFIG_PWD
+unset -v ZSHRC_FOLDER
+unset -v ZSHRC_LOCAL_FOLDER
 unset -f yesno
+
+echo "   Installation complete!"
+echo "──────────────────────────────────────────────────────────────────────────"
