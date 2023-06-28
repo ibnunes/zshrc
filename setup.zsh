@@ -59,6 +59,7 @@ echo "   Reloading zsh configuration…"
 source $ZSH_CONFIG_PWD
 
 echo "   Cleaning up…"
+unset -v f
 unset -v ZSHRC_FILES_ESSENTIAL
 unset -v ZSHRC_FILES_DEV
 unset -v ZSH_CONFIG_FILE

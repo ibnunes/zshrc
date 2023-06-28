@@ -3,23 +3,46 @@
 # ---------------------------------------
 
 function zshrc {
+    function zshrc_help() {
+        echo "   $(font bold fg_cyan)                                   zshrc                                    $(font reset)
+   ────────────────────────────────────────────────────────────────────────────
+   $(font bold underline)Usage$(font reset):  $(font bg 238) zshrc option [parameters] $(font reset)
+
+   ┌───────────────────┬──────────────────────────────────────────────────────┐
+   │ $(font bold)OPTION$(font reset)            │ $(font bold)DESCRIPTION$(font reset)                                          │
+   ├───────────────────┼──────────────────────────────────────────────────────┤
+   │ $(font bg 238) -l $(font reset)              │ Lists all the loaded configurations.                 │
+   │ $(font bg 238) -c $(font reset)              │ Opens the configuration file. If no configuration    │
+   │                   │ name is passed, $(font underline)~./zshrc$(font reset) will be opened.             │
+   │ $(font bg 238) -r $(font reset)              │ Reloads zsh configurations.                          │
+   │ $(font bg 238) -cr $(font reset)             │ Performs $(font bg 238) -c $(font reset) followed by $(font bg 238) -r $(font reset).                      │
+   │ $(font bg 238) -a $(font reset)              │ Adds a new alias to the alias configuration file.    │
+   │                   │ It requires two parameters: $(font bg 238) alias_name $(font reset), $(font bg 238) command $(font reset). │
+   │ $(font bg 238) --create-config $(font reset) │ Creates a new configuration file.                    │
+   │ $(font bg 238) --multi-alias $(font reset)   │ Creates a new multi-alias script.                    │
+   │ $(font bg 238) -u $(font reset)              │ Updates the main $(font underline)zsh.zsh$(font reset) script.                     │
+   │ $(font bg 238) -h $(font reset)              │ Shows this help menu.                                │
+   └───────────────────└──────────────────────────────────────────────────────┘
+"
+    }
+
     case $1 in
-        "-c")
+        ("-c")
             if [ $# -eq 2 ]; then
                 eval "nano ~/.zshrc.d/$2.zsh"
             else
                 eval "nano ~/.zshrc"
             fi
             ;;
-        "-r")
+        ("-r")
             eval "source ~/.zshrc"
             echo "zshrc updated"
             ;;
-        "-cr")
+        ("-cr")
             eval "zshrc -c $2"
             eval "zshrc -r"
             ;;
-        "-a")
+        ("-a")
             if [ $# -eq 3 ]; then
                 eval 'echo "# Added at $(date)\nalias $2=\"$3\"" >> ~/.zshrc.d/alias.zsh'
                 eval "zshrc -r"
@@ -27,14 +50,14 @@ function zshrc {
                 echo "This option requires two parameters run \"zshrc -h\"for help"
             fi
             ;;
-        "--create-config")
+        ("--create-config")
             if [ $# -eq 2 ]; then
                 eval "nano ~/.zshrc.d/$2.zsh"
             else
                 echo "This option requires one parameter run \"zshrc -h\"for help"
             fi
             ;;
-        "--multi-alias")
+        ("--multi-alias")
             read  "?Enter the multi alias name: " multiAliasName
             echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
             echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
@@ -50,35 +73,22 @@ function zshrc {
             echo "\tesac\n}" >> $HOME/.zshrc.d/$multiAliasName.zsh
             eval "zshrc -r"
             ;;
-        "-l")
+        ("-l")
             for cfg in ~/.zshrc.d/*.zsh; do
                 echo ${$(basename -- "$cfg")%.*}
             done
             ;;
-        "-u")
+        ("-u")
             echo "Updating zsh script..."
             rm -f "$HOME"/.zshrc.d/zsh.zsh
             eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/zsh.zsh -o "$HOME"/.zshrc.d/zsh.zsh"
             eval "zshrc -r"
             echo "zsh script updated"
             ;;
-    "-h")
-            echo "+------------+"
-            echo "| zshrc help |"
-            echo "+------------+"
-            echo "usage: zshrc option [parameters]\n"
-            echo "Option\t\tDescription"
-            echo "-l\t\tLists all the loaded configurations"
-            echo "-c\t\tOpens the configuration file\n\t\tIf no configuration name is passed the default \"~./zshrc\" will be opened"
-            echo "-r\t\tReloads the zsh configurations"
-            echo "-cr\t\tIt's the usage of -c and -r"
-            echo "-a\t\tAdds a new alias to the alias configuration file\n\t\tIt requires two parameters <alias_name> and <command>"
-            echo "--create-config\tCreates a new confign file"
-            echo "--multi-alias\tCreates a new multi alias script"
-            echo "-u\t\tUpdates this script"
-            echo "-h\t\tShows the help menu"
+        ("-h")
+            zshrc_help
             ;;
-        *)
+        (*)
             eval "zshrc -h"
             ;;
     esac
