@@ -10,7 +10,7 @@ function yesno() {
         echo -n "$@ (y/N) " > /dev/stdout
         read answer
     done
-    [[ $answer =~ 'y|Y' ]] && return 0 || return 1      # 0 for Yes, 1 for No
+    [[ $answer =~ 'y|Y' ]] && return 0 || return 1      # [0]=Yes [1]=No
 }
 
 ZSHRC_FILES_ESSENTIAL=(
@@ -20,20 +20,16 @@ ZSHRC_FILES_ESSENTIAL=(
     "utils"
     "zsh"
 )
-
 ZSHRC_FILES_DEV=(
     "cc"
     "cpp"
     "gl"
 )
-
 ZSH_CONFIG_FILE=".zshrc"
 ZSH_CONFIG_PWD="$HOME/$ZSH_CONFIG_FILE"
-
 ZSHRC_FOLDER=".zshrc.d"
 ZSHRC_LOCAL_FOLDER="$HOME/$ZSHRC_FOLDER"
-
-ZSHRC_REPO="https://raw.githubusercontent.com/ibnunes/zshrc/master/"
+ZSHRC_REPO="https://raw.githubusercontent.com/ibnunes/zshrc/master"
 
 
 echo "   Creating .zshrc.d folder in home directory…"
@@ -42,7 +38,7 @@ if [ ! -d $ZSHRC_LOCAL_FOLDER ]; then
 fi
 
 echo "   Appending ZSHRC loading code to user's .zshrc…"
-curl -s "$ZSHRC_REPO/$ZSH_CONFIG_FILE" -a $ZSH_CONFIG_PWD
+curl -s "$ZSHRC_REPO/$ZSH_CONFIG_FILE" | grep -v "#" >> $ZSH_CONFIG_PWD
 
 echo "   Installing essential ZSHRC configuration files…"
 for f in $ZSHRC_FILES_ESSENTIAL; do
