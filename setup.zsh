@@ -14,11 +14,12 @@ function yesno() {
 }
 
 ZSHRC_FILES_ESSENTIAL=(
-    "alias"
-    "hdd"
-    "mobaxterm"
+    "escape"
     "utils"
     "zsh"
+    "hdd"
+    "alias"
+    "mobaxterm"
 )
 ZSHRC_FILES_DEV=(
     "cc"
