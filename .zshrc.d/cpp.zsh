@@ -1,17 +1,15 @@
 # ----------------------------------------
-# C compilation with gcc
+# C++ compilation with g++
 # ----------------------------------------
 
-alias indent='indent -npsl -bl'
-
-gcc() {
-    # Enable convenience options for gcc
+g++() {
+    # Enable convenience options for g++
     set -- -Wall -Wextra "$@"
     set -- -fno-diagnostics-show-caret "$@"
-    command gcc "$@"
+    command g++ "$@"
 }
 
-__std-gcc() {
+__std-gpp() {
     local std=$1
     shift
     set -- -pedantic-errors -std=$std "$@"
@@ -21,29 +19,25 @@ __std-gcc() {
     set -- -Werror=missing-declarations "$@"
     set -- -Werror=implicit-int -Werror=implicit-function-declaration "$@"
     set -- -Wformat-security "$@"
-    gcc "$@"
+    g++ "$@"
 }
 
-c2x() {
-    __std-gcc 'c2x' "$@"
+cpp20() {
+    __std-gpp 'c++20' "$@"
 }
 
-c17() {
-    __std-gcc 'c17' "$@"
+cpp17() {
+    __std-gpp 'c++17' "$@"
 }
 
-c11() {
-    __std-gcc 'c11' "$@"
+cpp11() {
+    __std-gpp 'c++11' "$@"
 }
 
-c99() {
-    __std-gcc 'c99' "$@"
+cpp98() {
+    __std-gpp 'c++98' "$@"
 }
 
-c89() {
-    __std-gcc 'c89' "$@"
-}
-
-runcc() {
-    c17 "$@"
+runcpp() {
+    cpp20 "$@"
 }

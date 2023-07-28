@@ -1,73 +1,73 @@
 #!/bin/zsh
-eval "clear"
 
-echo "ZSH Custom Configurations"
-echo ""
-read "?Do you want to clear your ser zsh configuration file (.zshrc) file? (y/n) " clearZshrc
+echo "ZSHRC Setup                                                     1.1.0-beta"
+echo "──────────────────────────────────────────────────────────────────────────"
+echo "   Loading components…"
 
-if [ $clearZshrc = "y" ] || [ $clearZshrc = "Y" ]; then
-    echo "Clearing user zsh configuration file"
-    rm -f "$HOME"/.zshrc
-    echo "Installing new zsh configuration file"
-    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc -o "$HOME"/.zshrc"
-else
-    echo "Updating zsh configuration file"
-    eval "echo \"\n\" >> ~/.zshrc"
-    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc >> "$HOME"/.zshrc"
+function yesno() {
+    local answer=
+    while [[ ! $answer =~ "y|Y|n|N" ]]; do
+        echo -n "$@ (y/N) " > /dev/stdout
+        read answer
+    done
+    [[ $answer =~ 'y|Y' ]] && return 0 || return 1      # [0]=Yes [1]=No
+}
+
+ZSHRC_FILES_ESSENTIAL=(
+    "escape"
+    "utils"
+    "zsh"
+    "hdd"
+    "alias"
+    "mobaxterm"
+)
+ZSHRC_FILES_DEV=(
+    "cc"
+    "cpp"
+    "gl"
+)
+ZSH_CONFIG_FILE=".zshrc"
+ZSH_CONFIG_PWD="$HOME/$ZSH_CONFIG_FILE"
+ZSHRC_FOLDER=".zshrc.d"
+ZSHRC_LOCAL_FOLDER="$HOME/$ZSHRC_FOLDER"
+ZSHRC_REPO="https://raw.githubusercontent.com/ibnunes/zshrc/master"
+
+
+echo "   Creating .zshrc.d folder in home directory…"
+if [ ! -d $ZSHRC_LOCAL_FOLDER ]; then
+    mkdir -p $ZSHRC_LOCAL_FOLDER
 fi
 
-echo "Creating ZSH individual configuration folder"
-if [ ! -d "$HOME"/.zshrc.d ]; then
-	mkdir -p "$HOME"/.zshrc.d;
-fi
+echo "   Appending ZSHRC loading code to user's .zshrc…"
+curl -s "$ZSHRC_REPO/$ZSH_CONFIG_FILE" | grep -v "#" >> $ZSH_CONFIG_PWD
 
-echo "Installing zshrc script"
-eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/zsh.zsh -o "$HOME"/.zshrc.d/zsh.zsh"
+echo "   Installing essential ZSHRC configuration files…"
+for f in $ZSHRC_FILES_ESSENTIAL; do
+    echo "      $f.zsh"
+    curl -s "$ZSHRC_REPO/$ZSHRC_FOLDER/$f.zsh" -o "$ZSHRC_LOCAL_FOLDER/$f.zsh"
+done
 
-echo "Installing zsh individual files"
-eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/alias.zsh -o "$HOME"/.zshrc.d/alias.zsh"
-
-read "?Install C compilation with gcc? (y/n) " customCCompilationScript
-if [ $customCCompilationScript = "y" ] || [ $customCCompilationScript = "Y" ]; then
-    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/cc.zsh -o "$HOME"/.zshrc.d/cc.zsh"
-fi
-
-read "?Install OpenGL compilation with g++? (y/n) " openGlCompilation
-if [ $openGlCompilation = "y" ] || [ $openGlCompilation = "Y" ]; then
-    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/gl.zsh -o "$HOME"/.zshrc.d/gl.zsh"
-fi
-
-read "?Install Package manager aliases? (y/n) " pkgManagerAliases
-if [ $pkgManagerAliases = "y" ] || [ $pkgManagerAliases = "Y" ]; then
-    eval "curl -s https://raw.githubusercontent.com/thoga31/zshrc/master/.zshrc.d/up.zsh -o "$HOME"/.zshrc.d/up.zsh"
-fi
-
-echo "Multi alias script"
-echo "The multi alias script will allow to type \"ubi tc\" and the terminal changes to the tc folder that belongs to the ubi collection"
-read "?Create multi alias script? (y/n) " customMultiAliasScript
-if [ $customMultiAliasScript = "y" ] || [ $customMultiAliasScript = "Y" ]; then
-    endFlag="y"
-    varStr='$1'
-    while [ $endFlag = "y" ]
-    do
-        read "?Enter the multi alias name: " multiAliasName
-        echo "# ----------------------------------------\n# $multiAliasName navigation shortcuts\n# ----------------------------------------" > $HOME/.zshrc.d/$multiAliasName.zsh
-        echo "\nfunction $multiAliasName {\n\tcase \$1 in" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        exitFlag="n"
-        while [ $exitFlag = "n" ] || [ $exitFlag = "N" ]
-        do
-            read "?Alias: " aliasName
-            read "?Path: " aliasPath
-            echo "\t\t\"$aliasName\") eval \"cd $aliasPath\"" >> $HOME/.zshrc.d/$multiAliasName.zsh
-            echo "\t\t;;" >> $HOME/.zshrc.d/$multiAliasName.zsh
-            read "?End multi alias script creation? (y/n) " exitFlag
-        done
-        echo "\tesac\n}" >> $HOME/.zshrc.d/$multiAliasName.zsh
-        read "?Create new multi alias script? (y/n) " endFlag
+yesno "-> Install developer configuration files?"
+if [ $? -eq 0 ]; then
+    echo "   Installing developer ZSHRC configuration files…"
+    for f in $ZSHRC_FILES_DEV; do
+        echo "      $f.zsh"
+        curl -s "$ZSHRC_REPO/$ZSHRC_FOLDER/$f.zsh" -o "$ZSHRC_LOCAL_FOLDER/$f.zsh"
     done
 fi
 
-echo "Reloading zsh configuration file"
-eval "source "$HOME"/.zshrc"
-echo ""
-echo "All the zsh configuration files were installed and loaded successfully"
+echo "   Reloading zsh configuration…"
+source $ZSH_CONFIG_PWD
+
+echo "   Cleaning up…"
+unset -v f
+unset -v ZSHRC_FILES_ESSENTIAL
+unset -v ZSHRC_FILES_DEV
+unset -v ZSH_CONFIG_FILE
+unset -v ZSH_CONFIG_PWD
+unset -v ZSHRC_FOLDER
+unset -v ZSHRC_LOCAL_FOLDER
+unset -f yesno
+
+echo "   Installation complete!"
+echo "──────────────────────────────────────────────────────────────────────────"
