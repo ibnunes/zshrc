@@ -20,9 +20,9 @@ Each `*.zsh` file contains scripts for specific purposes.
 
 To install the scripts without cloning just enter the following command into the ZShell
 
-`zsh -c "$(curl -fsSL https://raw.githubusercontent.com/thoga31/zshrc/master/setup.zsh)"`
+`zsh -c "$(curl -fsSL https://raw.githubusercontent.com/ibnunes/zshrc/master/setup.zsh)"`
 
-More information available on the [wiki](https://github.com/thoga31/zshrc/wiki/Installation) or check the [releases](https://github.com/thoga31/zshrc/releases/tag/1.0.0) page
+More information available on the [wiki](https://github.com/ibnunes/zshrc/wiki/Installation) or check the [releases](https://github.com/ibnunes/zshrc/releases/tag/1.0.0) page
 
 ## How to use
 
