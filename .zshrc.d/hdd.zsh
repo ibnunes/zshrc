@@ -52,7 +52,7 @@ function hdd() {
     }
 
     function hdd_execute() {
-        local HDD_HDPARM=$(sudo hdparm $1 ${@:2})
+        local HDD_HDPARM=()
         HDD_SUCCESS=$?
 
         while read -r output; do
@@ -61,7 +61,12 @@ function hdd() {
                     echo $output | sed -rz -e 's/(.*):\n/\      ……  \1:\  /g'
                     ;;
             esac
+            HDD_HDPARM+=("$output\n")
         done < <( sudo hdparm $1 ${@:2} )
+        HDD_HDPARM=$(echo "${^HDD_HDPARM}")
+        # Concatenating the string with \n leads to unexpected bad behaviour of sed.
+        # The solution was the use of an array followed by a transformation to string with echo.
+        # Don't ask why, just accept it. I did.
 
         case $1 in
             ("-C")
