@@ -1,7 +1,35 @@
 function hdd() {
     echo ""     # Just some spacing for looks
 
-    local HDD_EXCEPTIONS=""     # <-- Add exceptions separated by spaces. e.g. "sdb sdf sdh"
+    # Manually added exceptions (leave as "" if none is required).
+    # Add exceptions separated by spaces (e.g. "sdb sdf sdh").
+    local HDD_EXCEPTIONS=""
+
+    # Automatically add SSDs as exceptions
+    function hdd_add_ssd_as_exception() {
+        local ARRSSD=(${(s/ /)}$(lsblk -d -o NAME,ROTA | grep -E "sd[a-z].*0" | sed -re 's/(sd[a-z]).*$/\1/g'  | tr '\n' ' '))
+        local EXCEPT=(${(s/ /)HDD_EXCEPTIONS})
+        for ssd in $ARRSSD; do
+            if (( ! ${EXCEPT[(I)$ssd]} )); then
+                HDD_EXCEPTIONS+=" $ssd"
+            fi
+        done
+    }
+
+    # To save partition labels
+    declare -A HDD_PARTITIONS
+
+    function hdd_get_partition_labels() {
+        local STRPAIRS=$(lsblk -o NAME,LABEL | grep -E 'sd[a-z][0-9]' | sed -re 's/.*(sd[a-z])[0-9]/\1/g' | sed -e 's/  */§/g' | tr '\n' ' ')
+        local ARRPAIRS=(${(s/ /)STRPAIRS})
+        for pair in $ARRPAIRS; do
+            key="/dev/${pair%%§*}"
+            value=${pair##*§}
+            HDD_PARTITIONS[$key]+="$value, "
+            # Last comma will be trimmed directly in output
+        done
+    }
+
 
     function hdd_printf() {
         if [ -z $1 ]; then
@@ -9,7 +37,8 @@ function hdd() {
         else
             echo "$@"           |
             sed -e 's/|/ /g'    \
-                -e 's/\\//g'
+                -e 's/\\//g'    |
+            sed -e 's/  */ /g'
         fi
     }
 
@@ -37,6 +66,7 @@ function hdd() {
     }
 
     function hdd_get_exceptions() {
+        hdd_add_ssd_as_exception
         local HDD_ELEMS=(${(s/ /)HDD_EXCEPTIONS})
         (IFS='|' ; HDD_TEMP=${HDD_ELEMS/#/\\\/dev\\\/} ; echo "${^HDD_TEMP}" | sed -e 's/|/\\|/g')
     }
@@ -83,25 +113,28 @@ function hdd() {
                         -e 's/\n([^:]*):\s*([^\n]*)/\1 \2\n/g'
                     )
 
+                # Only here do we need the partition labels
+                hdd_get_partition_labels
+
                 HDD_EXECUTE=$(
                     local HDD_HEADER=$( printf "%12sC%17s" '' '' | sed -re 's/\ /─/g' )
                     HDD_HEADER=$( printf "%5sL%sR" '' $HDD_HEADER )
 
                     echo $HDD_HEADER | sed -e 's/L/┌/g' -e 's/R/┐/g' -e 's/C/┬/g'
-                    printf "%5s│ $(font bold)%10s$(font reset) │ $(font bold)%-15s$(font reset) │\n" '' 'DRIVE' 'STATUS'
+                    printf "%5s│ $(font bold)%10s$(font reset) │ $(font bold)%-15s$(font reset) │ $(font bold)%s$(font reset)\n" '' 'DRIVE' 'STATUS' 'PARTITIONS'
                     echo $HDD_HEADER | sed -e 's/L/├/g' -e 's/R/┤/g' -e 's/C/┼/g'
                     for line in $HDD_OUTPUT; do
                         e=(${(s/ /)line})
-                        printf "%5s│ %10s │ §§§%15s │\n" " " "${e[1]}" "${e[2]}"
+                        printf "%5s│ %10s │ §§§%15s │ $(font fg 241)%s$(font reset)\n" " " "${e[1]}" "${e[2]}" "${HDD_PARTITIONS[${e[1]}][1,-3]}"
                     done
                     echo $HDD_HEADER | sed -e 's/L/└/g' -e 's/R/┘/g' -e 's/C/┴/g'
                 )
 
-                echo $HDD_EXECUTE                               |
-                sed -r                                          \
-                    -e "s/(\§{3})(\s*)(unknown)/$(font fg 238)\3\2$(font reset)/g"      \
-                    -e "s/(\§{3})(\s*)(active\/idle)/$(font fg_green)\3\2$(font reset)/g" \
-                    -e "s/(\§{3})(\s*)(standby)/$(font fg_yellow)\3\2$(font reset)/g"      \
+                echo $HDD_EXECUTE                                                           |
+                sed -r                                                                      \
+                    -e "s/(\§{3})(\s*)(unknown)/$(font fg 238)\3\2$(font reset)/g"          \
+                    -e "s/(\§{3})(\s*)(active\/idle)/$(font fg_green)\3\2$(font reset)/g"   \
+                    -e "s/(\§{3})(\s*)(standby)/$(font fg_yellow)\3\2$(font reset)/g"       \
                     -e "s/(\§{3})(\s*)(sleep)/$(font fg_red)\3\2$(font reset)/g"
                 ;;
         esac
@@ -122,6 +155,7 @@ function hdd() {
 "
         echo "   $(font underline)Available drives$(font reset):   $(font fg 241)$(hdd_printf $(hdd_get_drives))$(font reset)"
         echo "   $(font underline)Exceptions$(font reset):         $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
+        echo "                       └── Solid state drives are automatically added as exceptions."
     }
 
 
@@ -197,6 +231,8 @@ function hdd() {
 
     fi
 
+    unset -f hdd_add_ssd_as_exception
+    unset -f hdd_get_partition_labels
     unset -f hdd_printf
     unset -f hdd_no_operation
     unset -f hdd_get_all
@@ -204,7 +240,6 @@ function hdd() {
     unset -f hdd_get_exceptions
     unset -f hdd_get_permissions
     unset -f hdd_execute
-    unset -f hdd_help
 
     echo ""     # Just some more spacing for those looks
     return $HDD_SUCCESS
