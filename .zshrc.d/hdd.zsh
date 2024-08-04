@@ -3,11 +3,21 @@ function hdd() {
 
     # Manually added exceptions (leave as "" if none is required).
     # Add exceptions separated by spaces (e.g. "sdb sdf sdh").
+    # Do NOT precede with "/dev/", it'll be added where necessary.
     local HDD_EXCEPTIONS=""
+
+    # To save partition labels
+    declare -A HDD_PARTITIONS
+
 
     # Automatically add SSDs as exceptions
     function hdd_add_ssd_as_exception() {
-        local ARRSSD=(${(s/ /)}$(lsblk -d -o NAME,ROTA | grep -E "sd[a-z].*0" | sed -re 's/(sd[a-z]).*$/\1/g'  | tr '\n' ' '))
+        local ARRSSD=(${(s/ /)}$(
+            lsblk -d -o NAME,ROTA         |
+            grep -E "sd[a-z].*0"          |
+            sed -re 's/(sd[a-z]).*$/\1/g' |
+            tr '\n' ' '
+        ))
         local EXCEPT=(${(s/ /)HDD_EXCEPTIONS})
         for ssd in $ARRSSD; do
             if (( ! ${EXCEPT[(I)$ssd]} )); then
@@ -16,11 +26,10 @@ function hdd() {
         done
     }
 
-    # To save partition labels
-    declare -A HDD_PARTITIONS
 
+    # Get partition labels for all drives
     function hdd_get_partition_labels() {
-        local STRPAIRS=$(lsblk -o NAME,LABEL | grep -E 'sd[a-z][0-9]' | sed -re 's/.*(sd[a-z])[0-9]/\1/g' | sed -e 's/  */§/g' | tr '\n' ' ')
+        local STRPAIRS=$(lsblk -o NAME,LABEL | grep -E 'sd[a-z][0-9]' | sed -re 's/.*(sd[a-z])[0-9]/\1/g' -e 's/  */§/g' | tr '\n' ' ')
         local ARRPAIRS=(${(s/ /)STRPAIRS})
         for pair in $ARRPAIRS; do
             key="/dev/${pair%%§*}"
@@ -31,6 +40,7 @@ function hdd() {
     }
 
 
+    # Prints drives given by argument separated by spaces; removes preceding "/dev/"
     function hdd_printf() {
         if [ -z $1 ]; then
             echo "None"
@@ -38,10 +48,14 @@ function hdd() {
             echo "$@"           |
             sed -e 's/|/ /g'    \
                 -e 's/\\//g'    |
-            sed -e 's/  */ /g'
+            sed -e 's/  */, /g'  \
+                -e 's/\/dev\///g'
         fi
     }
 
+
+    # No operation was performed:
+    # prints either a custom message (argument $1) or the default one, and sets output flag HDD_SUCCESS accordingly
     function hdd_no_operation() {
         if [ ! -z $1 ]; then
             echo $1
@@ -51,10 +65,14 @@ function hdd() {
         HDD_SUCCESS=1
     }
 
+
+    # Gets all available SCSI/SATA drives (and others identified with prefix 'sd')
     function hdd_get_all() {
         echo $( ls -1 /dev | sed -n 's/sd.$/\0/p' )
     }
 
+
+    # Returns all drives preceded with "/dev/"
     function hdd_get_drives() {
         if [ -z $1 ]; then
             local HDD_ARGS=$(hdd_get_all)
@@ -65,12 +83,16 @@ function hdd() {
         echo ${HDD_ARGS/#/\/dev\/}
     }
 
+
+    # Fetches disk exceptions for 'hdd' to ignore
     function hdd_get_exceptions() {
         hdd_add_ssd_as_exception
         local HDD_ELEMS=(${(s/ /)HDD_EXCEPTIONS})
         (IFS='|' ; HDD_TEMP=${HDD_ELEMS/#/\\\/dev\\\/} ; echo "${^HDD_TEMP}" | sed -e 's/|/\\|/g')
     }
 
+
+    # Gets root permission to run ('hdparm' needs root access)
     function hdd_get_permissions() {
         if [[ $(sudo echo -n) ]]; then
             echo "     $(font fg_red)Invalid password.$(font reset) Cannot execute."
@@ -81,10 +103,13 @@ function hdd() {
         fi
     }
 
+
+    # Executes the command for the given drives after processing available drives and exclusions
     function hdd_execute() {
         local HDD_HDPARM=()
         HDD_SUCCESS=$?
 
+        # Command: 'standby'
         while read -r output; do
             case $1 in
                 ("-y")
@@ -98,6 +123,7 @@ function hdd() {
         # The solution was the use of an array followed by a transformation to string with echo.
         # Don't ask why, just accept it. I did.
 
+        # Command: 'status'
         case $1 in
             ("-C")
                 echo ""
@@ -113,7 +139,7 @@ function hdd() {
                         -e 's/\n([^:]*):\s*([^\n]*)/\1 \2\n/g'
                     )
 
-                # Only here do we need the partition labels
+                # Only here we need the partition labels
                 hdd_get_partition_labels
 
                 HDD_EXECUTE=$(
@@ -142,22 +168,29 @@ function hdd() {
         return $HDD_SUCCESS
     }
 
+
+    # Help printed when no arguments are provided or 'hdd help' is issued
     function hdd_help() {
         echo "   $(font bold fg_cyan)                   zshrc's HDD status management helper                   $(font reset)
    ──────────────────────────────────────────────────────────────────────────
    $(font bold underline)Usage$(font reset):  $(font bg 238) hdd OPERATION [-f | --force] [DRIVES…] $(font reset)
 
    $(font bold underline)Arguments$(font reset):
-      $(font bg 238) OPERATION $(font reset) ───┬── check/status     $(font fg 249)Checks drives statuses in a table.$(font reset)
-                     └── standby          $(font fg 249)Sends standby signal to drives.$(font reset)
+      $(font bg 238) OPERATION $(font reset) ───┬── $(font bg 238) check/status $(font reset)   $(font fg 249)Checks drives statuses in a table.$(font reset)
+          │          └── $(font bg 238) standby $(font reset)        $(font fg 249)Sends standby signal to drives.$(font reset)
+          └── May be optionally preceded by $(font bg 238)--$(font reset) (e.g. $(font bg 238)--status$(font reset)).
       $(font bg 238) [-f | --force] $(font reset)                    $(font fg 249)Force mode: ignore exceptions.$(font reset)
-      $(font bg 238) [DRIVES…] $(font reset)                         $(font fg 249)Drives separated by space$(font reset)
+      $(font bg 238) [DRIVES…] $(font reset)                         $(font fg 249)Drives separated by space.$(font reset)
 "
         echo "   $(font underline)Available drives$(font reset):   $(font fg 241)$(hdd_printf $(hdd_get_drives))$(font reset)"
         echo "   $(font underline)Exceptions$(font reset):         $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
-        echo "                       └── Solid state drives are automatically added as exceptions."
+        echo "      └── Solid state drives are automatically added as exceptions."
     }
 
+
+    # --------------------
+    #      MAIN BLOCK
+    # --------------------
 
     local HDD_SUCCESS=0
     local HDD_JUMP=0
@@ -166,20 +199,27 @@ function hdd() {
     local HDD_EXCLUDE=$(hdd_get_exceptions)
     local HDD_ARG_POS=2
 
+    # No args? Help!
     if [ -z $1 ]; then
         hdd_help
         HDD_JUMP=1
     fi
 
+    # Args provided, translate to respective 'hdparm' argument.
+    # If help is requested, we'll jump execution.
     if [ $HDD_JUMP -eq 0 ]; then
         case $1 in
-            ("check" | "status")
+            ("check" | "status" | "--check" | "--status")
                 echo "     HDD status check requested."
                 HDD_OPER='-C'
                 ;;
-            ("standby")
+            ("standby" | "--standby")
                 echo "     HDD standby requested."
                 HDD_OPER='-y'
+                ;;
+            ("help" | "--help")
+                hdd_help
+                HDD_JUMP=1
                 ;;
             (*)
                 hdd_no_operation "     $(font fg_red)Invalid arguments provided.$(font reset)"
@@ -187,6 +227,7 @@ function hdd() {
         esac
     fi
 
+    # Args correctly parsed and no help requested: parse drives and exceptions and then execute
     if [ $HDD_SUCCESS -eq 0 ] && [ $HDD_JUMP -eq 0 ]; then
 
         if [[ $2 == "-f" || $2 == "--force" ]]; then
@@ -210,6 +251,7 @@ function hdd() {
             HDD_JUMP=1
         fi
 
+        # Everything ok, let's execute!
         if [ $HDD_JUMP -eq 0 ]; then
             local HDD_PERM_OUTPUT=$(hdd_get_permissions)
             if [ $? -ne 0 ]; then
