@@ -106,7 +106,8 @@ function font() {
 
     for arg in $@; do
         case $arg in
-            ("fg"|"bg")                                         # Colors: gotta catch 'em all!
+            # Colors: gotta catch 'em all!
+            ("fg"|"bg")
                 if $CATCH; then
                     PARAM+=($LEN2ANSI[${#COLOR[@]}] $COLOR)
                     COLOR=()
@@ -114,7 +115,8 @@ function font() {
                 PARAM+=($FONT[$arg])
                 CATCH=true
                 ;;
-            (*)                                                 # All other AECs
+            # All other AECs
+            (*)
                 if $CATCH && [[ $arg =~ '^[0-9]+$' ]]; then
                     COLOR+=($arg)
                 elif $CATCH; then
