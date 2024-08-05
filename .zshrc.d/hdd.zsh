@@ -29,7 +29,11 @@ function hdd() {
 
     # Get partition labels for all drives
     function hdd_get_partition_labels() {
-        local STRPAIRS=$(lsblk -o NAME,LABEL | grep -E 'sd[a-z][0-9]' | sed -re 's/.*(sd[a-z])[0-9]/\1/g' -e 's/  */§/g' | tr '\n' ' ')
+        local STRPAIRS=$(
+            lsblk -o NAME,LABEL                                 |
+            grep -E 'sd[a-z][0-9]'                              |
+            sed -re 's/.*(sd[a-z])[0-9]/\1/g' -e 's/  */§/g'    |
+            tr '\n' ' ')
         local ARRPAIRS=(${(s/ /)STRPAIRS})
         for pair in $ARRPAIRS; do
             key="/dev/${pair%%§*}"
@@ -79,8 +83,10 @@ function hdd() {
         else
             local HDD_ARGS="$@"
         fi
-        HDD_ARGS=(${(s/ /)HDD_ARGS})
-        echo ${HDD_ARGS/#/\/dev\/}
+
+        HDD_ARGS=(${(s/ /)HDD_ARGS})            # Makes a string array from the string
+        HDD_ARGS=(${HDD_ARGS[@]//\/dev\//})     # Removes any existing "/dev/" (avoids the duplicate "/dev//dev/")
+        echo ${HDD_ARGS/#/\/dev\/}              # Adds "/dev/" to all drives
     }
 
 
@@ -107,37 +113,53 @@ function hdd() {
     # Executes the command for the given drives after processing available drives and exclusions
     function hdd_execute() {
         local HDD_HDPARM=()
-        HDD_SUCCESS=$?
+        local HDD_EXEC_SUCCESS=()
+        local HDD_EXEC_ERROR=()
+        local HDD_EXECUTE=
+        local HDD_EXEC_COMMAND=$1
+        local HDD_EXEC_DRIVES=(${@:2})
 
-        # Command: 'standby'
-        while read -r output; do
-            case $1 in
-                ("-y")
-                    echo $output | sed -rz -e 's/(.*):\n/\      ……  \1:\  /g'
-                    ;;
-            esac
-            HDD_HDPARM+=("$output\n")
-        done < <( sudo hdparm $1 ${@:2} )
-        HDD_HDPARM=$(echo "${^HDD_HDPARM}")
-        # Concatenating the string with \n leads to unexpected bad behaviour of sed.
-        # The solution was the use of an array followed by a transformation to string with echo.
-        # Don't ask why, just accept it. I did.
+        for drive in $HDD_EXEC_DRIVES; do
+            if [[ $drive =~ "^/dev/sd." ]]; then
+                HDD_HDPARM=$( sudo hdparm $HDD_EXEC_COMMAND $drive 2>&1 )
+                HDD_SUCCESS=$?
+            else
+                HDD_HDPARM=( "$drive is not a valid drive." )
+                HDD_SUCCESS=1
+            fi
 
-        # Command: 'status'
+            if [ $HDD_SUCCESS -eq 0 ]; then
+                HDD_EXEC_SUCCESS+=("$HDD_HDPARM\n")
+            else
+                HDD_EXEC_ERROR+=("$HDD_HDPARM\n")
+            fi
+        done
+
+        # Resets the flag
+        HDD_SUCCESS=0
+
+        echo ""
         case $1 in
+            # Command: standby
+            ("-y")
+                for output in $HDD_EXEC_SUCCESS; do
+                    echo $output | sed -rz -e 's/\n(.*):\n(.*)\n/\      ……  \1:\2/g'
+                done
+                ;;
+
+            # Command: status
             ("-C")
-                echo ""
                 local HDD_OUTPUT=()
-                while read -r value; do
-                    HDD_OUTPUT+=($value)
-                done <                                          \
-                    <( echo $HDD_HDPARM                         |
-                    sed -rz                                     \
-                        -e 's/ drive state is://g'              \
-                        -e 's/\n\n/\n/g'                        \
-                        -e 's/:\n/:/g'                          \
-                        -e 's/\n([^:]*):\s*([^\n]*)/\1 \2\n/g'
-                    )
+                for output in $HDD_EXEC_SUCCESS; do
+                    HDD_OUTPUT+=("$(
+                        echo $output                                |
+                        sed -rz                                     \
+                            -e 's/ drive state is://g'              \
+                            -e 's/\n\n/\n/g'                        \
+                            -e 's/:\n/:/g'                          \
+                            -e 's/\n([^:]*):\s*([^\n]*)/\1 \2\n/g'
+                    )\n")
+                done
 
                 # Only here we need the partition labels
                 hdd_get_partition_labels
@@ -151,7 +173,7 @@ function hdd() {
                     echo $HDD_HEADER | sed -e 's/L/├/g' -e 's/R/┤/g' -e 's/C/┼/g'
                     for line in $HDD_OUTPUT; do
                         e=(${(s/ /)line})
-                        printf "%5s│ %10s │ §§§%15s │ $(font fg 241)%s$(font reset)\n" " " "${e[1]}" "${e[2]}" "${HDD_PARTITIONS[${e[1]}][1,-3]}"
+                        printf "%5s│ %10s │ §§§%15s │ $(font fg 241)%s$(font reset)\n" " " "${e[1]}" "${e[2][1,-3]}" "${HDD_PARTITIONS[${e[1]}][1,-3]}"
                     done
                     echo $HDD_HEADER | sed -e 's/L/└/g' -e 's/R/┘/g' -e 's/C/┴/g'
                 )
@@ -164,6 +186,15 @@ function hdd() {
                     -e "s/(\§{3})(\s*)(sleep)/$(font fg_red)\3\2$(font reset)/g"
                 ;;
         esac
+
+        # Report errors safely caught
+        if [[ ! -z $HDD_EXEC_ERROR ]]; then
+            echo "\nThe following $(font fg_red)errors$(font reset) were safely caught:"
+            for error in $HDD_EXEC_ERROR; do
+                echo "    -> $error" | sed -rz -e "s/\n/ /g" -e "s/$/\n/"
+            done
+            HDD_CONTROLLED_ERROR=1
+        fi
 
         return $HDD_SUCCESS
     }
@@ -193,6 +224,7 @@ function hdd() {
     # --------------------
 
     local HDD_SUCCESS=0
+    local HDD_CONTROLLED_ERROR=0
     local HDD_JUMP=0
     local HDD_OPER=
     local HDD_DRIVES=
@@ -227,7 +259,7 @@ function hdd() {
         esac
     fi
 
-    # Args correctly parsed and no help requested: parse drives and exceptions and then execute
+    # Args correctly parsed and no help requested: let's execute!
     if [ $HDD_SUCCESS -eq 0 ] && [ $HDD_JUMP -eq 0 ]; then
 
         if [[ $2 == "-f" || $2 == "--force" ]]; then
@@ -251,7 +283,6 @@ function hdd() {
             HDD_JUMP=1
         fi
 
-        # Everything ok, let's execute!
         if [ $HDD_JUMP -eq 0 ]; then
             local HDD_PERM_OUTPUT=$(hdd_get_permissions)
             if [ $? -ne 0 ]; then
@@ -266,7 +297,11 @@ function hdd() {
                 if [ $HDD_SUCCESS -ne 0 ]; then
                     hdd_no_operation "\n     $(font fg_red)Operation failed.$(font reset)"
                 else
-                    echo "\n     $(font fg_green)Operation reported success.$(font reset)"
+                    if [ $HDD_CONTROLLED_ERROR -eq 0 ]; then
+                        echo "\n     $(font fg_green)Operation reported success.$(font reset)"
+                    else
+                        hdd_no_operation "\n     $(font fg_yellow)Operation reported success, although with errors safely caught.$(font reset)"
+                    fi
                 fi
             fi
         fi
