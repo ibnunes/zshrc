@@ -2,7 +2,7 @@
 # ZSHRC Configuration
 # ---------------------------------------
 
-ZSHRC_VERSION="1.2.0-beta"
+ZSHRC_VERSION="1.3.0-beta"
 
 function __zshrc_help() {
     echo "   $(font bold fg_cyan)                                   zshrc                                    $(font reset)

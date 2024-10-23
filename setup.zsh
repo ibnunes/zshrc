@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-echo "ZSHRC Setup                                                     1.2.0-beta"
+echo "ZSHRC Setup                                                     1.3.0-beta"
 echo "──────────────────────────────────────────────────────────────────────────"
 echo "   Loading components…"
 
