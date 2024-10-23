@@ -6,6 +6,10 @@ function hdd() {
     # Do NOT precede with "/dev/", it'll be added where necessary.
     local HDD_EXCEPTIONS=""
 
+    # If not 0, allows the forced use of external commands even if
+    # root privileges have been previously granted from current session.
+    local HDD_FORCE_EXTERNAL=0
+
     # To save partition labels
     declare -A HDD_PARTITIONS
 
@@ -119,6 +123,8 @@ function hdd() {
         local HDD_EXEC_COMMAND=$1
         local HDD_EXEC_DRIVES=(${@:2})
 
+        echo ""
+
         for drive in $HDD_EXEC_DRIVES; do
             if [[ $drive =~ "^/dev/sd." ]]; then
                 HDD_HDPARM=$( sudo hdparm $HDD_EXEC_COMMAND $drive 2>&1 )
@@ -130,6 +136,9 @@ function hdd() {
 
             if [ $HDD_SUCCESS -eq 0 ]; then
                 HDD_EXEC_SUCCESS+=("$HDD_HDPARM\n")
+                if [[ $1 == "-y" ]]; then
+                    echo "$HDD_HDPARM\n" | sed -rz -e 's/\n(.*):\n(.*)\n/\     -> \1:\2/g' | sed -rz -e 's/issuing/issued/g'
+                fi
             else
                 HDD_EXEC_ERROR+=("$HDD_HDPARM\n")
             fi
@@ -138,14 +147,10 @@ function hdd() {
         # Resets the flag
         HDD_SUCCESS=0
 
-        echo ""
+        # echo ""
         case $1 in
             # Command: standby
-            ("-y")
-                for output in $HDD_EXEC_SUCCESS; do
-                    echo $output | sed -rz -e 's/\n(.*):\n(.*)\n/\      ……  \1:\2/g'
-                done
-                ;;
+            # Success output moved upwards in order to have a real-time feedback of standby commands being issued
 
             # Command: status
             ("-C")
@@ -200,6 +205,69 @@ function hdd() {
     }
 
 
+    function hdd_execute_external() {
+        # $1     - internal argument used with 'hdd'
+        # $2     - external command to be called
+        # $3     - '1' if sudo needed, otherwise no root permissions are asked for
+        # ${@:4} - remaining arguments to be passed on to external command
+
+        if typeset -f $2 >/dev/null; then
+
+            if [ $3 -eq 1 ]; then
+
+                # Get permissions if necessary
+                local HDD_PERM_OUTPUT=$(hdd_get_permissions)
+                if [ $? -ne 0 ]; then
+                    hdd_no_operation $HDD_PERM_OUTPUT
+                else
+                    echo $HDD_PERM_OUTPUT
+                fi
+
+            else
+                echo "No root permissions are needed for $(font bold fg_cyan)hdd $1$(font reset)."
+
+                # Check if root permissions are granted anyway from previous commands in current session.
+                # If so, give a warning and conditionally block command execution.
+
+                if sudo -n true 2> /dev/null; then
+
+                    echo "$(font fg_yellow)┌──────────────────────────────────────────────────────────────────────────────┐$(font reset)"
+                    echo "$(font bold fg_yellow)│ WARNING!$(font reset) Root permissions have been granted from current session.            $(font fg_yellow)│$(font reset)"
+                    if [ $HDD_FORCE_EXTERNAL -eq 0 ]; then
+                        # Block command execution!
+                        echo "$(font bold fg_yellow)│$(font reset)          Since $(font bold fg_cyan)hdd $1$(font reset) calls an external command, $(font underline)it was $(font fg_red)blocked$(font reset) to avoid $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          potential misuse of these root privilege.                           $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          If you want to execute it anyway, use the flag $(font bg 238) -f $(font reset) or $(font bg 238) --force $(font reset).   $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          $(font bold underline)Use it AYOR!$(font reset)                                                        $(font fg_yellow)│$(font reset)"
+                        HDD_SUCCESS=1
+                    else
+                        echo "$(font bold fg_yellow)│$(font reset)          However, the $(font bg 238) --force $(font reset) flag has been issued! The command will be    $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          $(font fg_green)executed$(font reset) as per your request.                                       $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          Since $(font bold fg_cyan)hdd $1$(font reset) is an external command, $(font underline)beware of potential misuse$(font reset) $(font fg_yellow)│$(font reset)"
+                        echo "$(font bold fg_yellow)│$(font reset)          $(font underline)of these root privileges$(font reset).                                           $(font fg_yellow)│$(font reset)"
+                    fi
+                    echo "$(font fg_yellow)└──────────────────────────────────────────────────────────────────────────────┘$(font reset)"
+
+                else
+
+                    echo "$(font fg_cyan)┌──────────────────────────────────────────────────────────────────────────────┐$(font reset)"
+                    echo "$(font bold fg_cyan)│ INFORMATION$(font reset)  $(font underline)No$(font reset) root permissions have been granted from current session.     $(font fg_cyan)│$(font reset)"
+                    echo "$(font fg_cyan)└──────────────────────────────────────────────────────────────────────────────┘$(font reset)"
+
+                fi
+            fi
+
+            if [ $HDD_SUCCESS -eq 0 ]; then
+                echo ""
+                eval "$2 ${@:4}"
+            fi
+            unset -f $2
+        else
+            echo "$(font fg_red)hdd $1 is not available!$(font reset)"
+        fi
+    }
+
+
     # Help printed when no arguments are provided or 'hdd help' is issued
     function hdd_help() {
         echo "   $(font bold fg_cyan)                   zshrc's HDD status management helper                   $(font reset)
@@ -208,14 +276,23 @@ function hdd() {
 
    $(font bold underline)Arguments$(font reset):
       $(font bg 238) OPERATION $(font reset) ───┬── $(font bg 238) check/status $(font reset)   $(font fg 249)Checks drives statuses in a table.$(font reset)
-          │          └── $(font bg 238) standby $(font reset)        $(font fg 249)Sends standby signal to drives.$(font reset)
+          │          ├── $(font bg 238) standby $(font reset)        $(font fg 249)Sends standby signal to drives.$(font reset)
+          │          │
+          │          │   $(font italic)External commands$(font reset)
+          │          ├── $(font bg 238) report $(font reset)         $(font fg 249)Prints disk usage report.$(font reset)
+          │          └── $(font bg 238) sync $(font reset)           $(font fg 249)Syncs with backup drives.$(font reset)
+          │
           └── May be optionally preceded by $(font bg 238)--$(font reset) (e.g. $(font bg 238)--status$(font reset)).
-      $(font bg 238) [-f | --force] $(font reset)                    $(font fg 249)Force mode: ignore exceptions.$(font reset)
-      $(font bg 238) [DRIVES…] $(font reset)                         $(font fg 249)Drives separated by space.$(font reset)
+
+      $(font bg 238) [-f | --force] $(font reset)   $(font fg 249)Force mode: ignore exceptions.$(font reset)
+                         $(font fg 249)For $(font italic)external commands$(font italic_off), forces execution even if root
+                         privileges were previously granted from current session.$(font reset)
+
+      $(font bg 238) [DRIVES…] $(font reset)        $(font fg 249)Drives separated by space.$(font reset)
 "
         echo "   $(font underline)Available drives$(font reset):   $(font fg 241)$(hdd_printf $(hdd_get_drives))$(font reset)"
         echo "   $(font underline)Exceptions$(font reset):         $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
-        echo "      └── Solid state drives are automatically added as exceptions."
+        echo "      └── $(font italic)Solid state drives are automatically added as exceptions$(font reset)."
     }
 
 
@@ -251,6 +328,23 @@ function hdd() {
                 ;;
             ("help" | "--help")
                 hdd_help
+                HDD_JUMP=1
+                ;;
+            ("report")
+                # External command
+                if [[ $2 == "-f" || $2 == "--force" ]]; then
+                    HDD_FORCE_EXTERNAL=1
+                    HDD_ARG_POS=3
+                fi
+                hdd_execute_external $1 "hddreport" 1 ${@:$HDD_ARG_POS}
+                HDD_JUMP=1
+                ;;
+            ("sync")
+                # External command
+                if [[ $2 == "-f" || $2 == "--force" ]]; then
+                    HDD_FORCE_EXTERNAL=1
+                fi
+                hdd_execute_external $1 "hddsync" 1
                 HDD_JUMP=1
                 ;;
             (*)
@@ -317,6 +411,8 @@ function hdd() {
     unset -f hdd_get_exceptions
     unset -f hdd_get_permissions
     unset -f hdd_execute
+    unset -f hdd_execute_external
+    unset -f hdd_help
 
     echo ""     # Just some more spacing for those looks
     return $HDD_SUCCESS
