@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-echo "ZSHRC Setup                                                     1.2.0-beta"
+echo "ZSHRC Setup                                                     1.4.0-beta"
 echo "──────────────────────────────────────────────────────────────────────────"
 echo "   Loading components…"
 
@@ -18,6 +18,8 @@ ZSHRC_FILES_ESSENTIAL=(
     "utils"
     "zsh"
     "hdd"
+    "blkidf"
+    ".blkid_impl"
     "alias"
     "mobaxterm"
 )
