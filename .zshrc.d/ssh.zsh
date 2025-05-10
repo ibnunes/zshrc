@@ -3,8 +3,8 @@
 # ----------------------------------------
 
 remote() {
-    local SSH_DOMAIN=""
-    local SSH_PORT=22
+    local SSH_DOMAIN=""     # Customize your intended domain
+    local SSH_PORT=22       # Customize your SSH port if applicable (default is 22)
 
     case $1 in
         ("start"|"stop"|"restart"|"status")

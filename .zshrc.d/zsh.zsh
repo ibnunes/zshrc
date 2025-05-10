@@ -2,12 +2,12 @@
 # ZSHRC Configuration
 # ---------------------------------------
 
-ZSHRC_VERSION="1.3.0-beta"
+ZSHRC_VERSION="1.4.0-beta"
 
 function __zshrc_help() {
     echo "   $(font bold fg_cyan)                                   zshrc                                    $(font reset)
    ────────────────────────────────────────────────────────────────────────────
-   $(font bold underline)Usage$(font reset):  $(font bg 238) zshrc option [parameters] $(font reset)
+   $(font bold underline)Usage$(font reset):  $(font bg 238) zshrc option [parameters] $(font reset)                               $(font bold fg_cyan)$ZSHRC_VERSION$(font reset)
 
    ┌───────────────────┬──────────────────────────────────────────────────────┐
    │ $(font bold)OPTION$(font reset)            │ $(font bold)DESCRIPTION$(font reset)                                          │
@@ -26,8 +26,9 @@ function __zshrc_help() {
    │ $(font bg 238) -h $(font reset)              │ Shows this help menu.                                │
    └───────────────────┴──────────────────────────────────────────────────────┘
 
-   $(font bold underline)Authors$(font reset):     Igor Nunes          https://github.com/ibnunes
-                Pedro Cavaleiro     https://github.com/PedroCavaleiro
+     $(font bold underline)Contribute in$(font reset):                         https://github.com/ibnunes/zshrc
+           $(font bold underline)Authors$(font reset):      Igor Nunes         https://github.com/ibnunes
+                         Pedro Cavaleiro    https://github.com/PedroCavaleiro
 "
 }
 

@@ -19,5 +19,7 @@ pkgmgr() {
     unset -v pkg
 }
 
-# Execute the pkgmgr command
+# Execute the pkgmgr command (default: apt)
+# Give your preferred package manager as first and only argument if its options are similar to apt.
+# For other package managers, the pkgmgr() function must be customized by you.
 pkgmgr

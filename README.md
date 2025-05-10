@@ -1,12 +1,9 @@
 # zshrc
 
-Personalized configuration of `zsh`.
+Personalized configuration for `zsh`.
 
 * **Authors:** [Igor Nunes](https://github.com/ibnunes), [Pedro Cavaleiro](https://github.com/PedroCavaleiro)
 * **License:** [The Unlicense](LICENSE.md)
-
-
-## Motivation
 
 This project was created as a personal repository to have everything ready to use for whenever we format our PCs. However, we figured it could be useful for more people because why the hell not.
 
@@ -28,6 +25,31 @@ Each `*.zsh` file contains scripts/functions for specific purposes.
    │      └── zsh.zsh
    └── .zshrc
 ```
+
+
+## Commands provided out-of-the-box
+
+| Command | Description | Observations |
+| --- | --- | --- |
+| `zsh` | The `zshrc` Manager |  |
+| **General** |
+| `blkidf` | Formatted `blkid` command. | 11 possible formats: Table, CSV, Markdown, JSON, NDJSON, YAML, TOML, INI, SQL, HTML, XML. |
+| `font` | Formatted text using ANSI Escape Codes. | |
+| `hdd` | Collection of HDD management utilities. | There are "external" commands &mdash; in [`hdd_external.zsh`](.zshrc.d/hdd_external.zsh) &mdash; which must be customized by you before use. |
+| `remote` | Manages `sshd` service or initiates remote SSH session. | The [`ssh.zsh`](.zshrc.d/ssh.zsh) script must be customized by you before use. |
+| **Package manager aliases** |  | Only compatible with package managers similar to `apt`. |
+| `update`     | Alias for `sudo $pkg update`     | Where `$pkg` is the package manager (default: `apt`). |
+| `upgrade`    | Alias for `sudo $pkg upgrade`    | Idem. |
+| `upall`      | Alias for `update && upgrade`    | Idem. |
+| `install`    | Alias for `sudo $pkg install`    | Idem. |
+| `remove`     | Alias for `sudo $pkg remove`     | Idem. |
+| `autoremove` | Alias for `sudo $pkg autoremove` | Idem. |
+| **For developers** |
+| `yesno` | Command to get a yes/no answer from the user in zsh scripts. | Not tested for other shells. |
+| `runcc` | Alias for `gcc` with a series of flags and C17 by default. | Can be customzied in [cc.zsh](.zshrc.d/cc.zsh): we provide auxiliary functions for the most common C Standards. |
+| `runcpp` | Alias for `g++` with a series of flags and C++20 by default. | Can be customzied in [cpp.zsh](.zshrc.d/cpp.zsh): we provide auxiliary functions for the most common C++ Standards. |
+| `rungl` | Alias for `g++` to compile a project with OpenGL. | Requires the presence of a collection of OpenGL libraries and others related. |
+| `runvk` | Alias for `g++` to compile a project with Vulkan. | Requires the presence of a collection of Vulkan libraries and others related. |
 
 
 ## Installation
@@ -76,5 +98,5 @@ Create new `*.zsh` files to add to the `.zshrc.d` directory.
 
 | Contributor | Contributions |
 | --- | --- |
-| [Igor Nunes](https://github.com/ibnunes) | Original project, *hdd* scripts |
-| [Pedro Cavaleiro](https://github.com/PedroCavaleiro) | Original project, *zsh.zsh* main script, setup |
+| [Igor Nunes](https://github.com/ibnunes) | Original project; *hdd* and *blkidf* commands |
+| [Pedro Cavaleiro](https://github.com/PedroCavaleiro) | Original project; *zsh.zsh* main script; Setup |
