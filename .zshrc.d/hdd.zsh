@@ -75,14 +75,28 @@ function hdd() {
 
 
     # Gets all available SCSI/SATA drives (and others identified with prefix 'sd')
-    function hdd_get_all() {
+    function hdd_get_scsi() {
         echo $( ls -1 /dev | sed -n 's/sd.$/\0/p' )
+    }
+
+
+    # Gets all available NVMe drives
+    function hdd_get_nvme() {
+        echo $( ls -1 /dev | sed -n 's/nvme.n.$/\0/p' )
+    }
+
+
+    # Gets all available drives: SCSI/SATA and NVMe
+    function hdd_get_all() {
+        echo $( ls -1 /dev | sed -ne 's/nvme.n.$/\0/p' -e 's/sd.$/\0/p' )
     }
 
 
     # Returns all drives preceded with "/dev/"
     function hdd_get_drives() {
         if [ -z $1 ]; then
+            local HDD_ARGS=$(hdd_get_scsi)
+        elif [[ $1 == "ALL" ]]; then
             local HDD_ARGS=$(hdd_get_all)
         else
             local HDD_ARGS="$@"
@@ -268,6 +282,67 @@ function hdd() {
     }
 
 
+    function hdd_temperature() {
+        local HDD_DRIVES=($@)
+        local HDD_TEMP=()
+        local HDD_EXEC_SUCCESS=()
+        local HDD_EXEC_ERROR=()
+        local HDD_SUCCESS=0
+
+        echo ""
+
+        for drive in $HDD_DRIVES; do
+            if [[ $drive =~ "^/dev/sd." ]]; then
+                HDD_TEMP=$( sudo smartctl -a "$drive" | awk '/Temperature_Celsius/ {print $10; exit}' )
+                HDD_SUCCESS=$?
+            else
+                HDD_TEMP=( "$drive is not a valid drive." )
+                HDD_SUCCESS=1
+            fi
+
+            if [ $HDD_SUCCESS -eq 0 ]; then
+                HDD_EXEC_SUCCESS+=("$drive $HDD_TEMP")
+            else
+                HDD_EXEC_ERROR+=("$HDD_TEMP\n")
+            fi
+        done
+
+        # Resets the flag
+        HDD_SUCCESS=0
+
+        # Output formatted table of temperatures
+        if (( ${#HDD_EXEC_SUCCESS[@]} != 0 )); then
+            # Only here we need the partition labels
+            hdd_get_partition_labels
+
+            local HDD_HEADER=$( printf "%12sC%13s" '' '' | sed -re 's/\ /─/g' )
+            HDD_HEADER=$( printf "%5sL%sR" '' $HDD_HEADER )
+
+            echo $HDD_HEADER | sed -e 's/L/┌/g' -e 's/R/┐/g' -e 's/C/┬/g'
+            printf "%5s│ $(font bold)%10s$(font reset) │ $(font bold)%-11s$(font reset) │ $(font bold)%s$(font reset)\n" '' 'DRIVE' 'TEMPERATURE' 'PARTITIONS'
+            echo $HDD_HEADER | sed -e 's/L/├/g' -e 's/R/┤/g' -e 's/C/┼/g'
+
+            for output in $HDD_EXEC_SUCCESS; do
+                e=(${(s/ /)output})
+                printf "%5s│ %10s │ %8s °C │ $(font fg 241)%s$(font reset)\n" " " "${e[1]}" "${e[2]}" "${HDD_PARTITIONS[${e[1]}][1,-3]}"
+            done
+
+            echo $HDD_HEADER | sed -e 's/L/└/g' -e 's/R/┘/g' -e 's/C/┴/g'
+        fi
+
+        # Report errors safely caught
+        if [[ ! -z $HDD_EXEC_ERROR ]]; then
+            echo "\nThe following $(font fg_red)errors$(font reset) were safely caught:"
+            for error in $HDD_EXEC_ERROR; do
+                echo "    -> $error" | sed -rz -e "s/\n/ /g" -e "s/$/\n/"
+            done
+            HDD_CONTROLLED_ERROR=1
+        fi
+
+        return $HDD_SUCCESS
+    }
+
+
     # Help printed when no arguments are provided or 'hdd help' is issued
     function hdd_help() {
         echo "   $(font bold fg_cyan)                   zshrc's HDD status management helper                   $(font reset)
@@ -277,6 +352,7 @@ function hdd() {
    $(font bold underline)Arguments$(font reset):
       $(font bg 238) OPERATION $(font reset) ───┬── $(font bg 238) check/status $(font reset)   $(font fg 249)Checks drives statuses in a table.$(font reset)
           │          ├── $(font bg 238) standby $(font reset)        $(font fg 249)Sends standby signal to drives.$(font reset)
+          │          ├── $(font bg 238) temp $(font reset)           $(font fg 249)Check current disk temperatures.$(font reset)
           │          │
           │          │   $(font italic)External commands$(font reset)
           │          ├── $(font bg 238) report $(font reset)         $(font fg 249)Prints disk usage report.$(font reset)
@@ -318,17 +394,21 @@ function hdd() {
     # If help is requested, we'll jump execution.
     if [ $HDD_JUMP -eq 0 ]; then
         case $1 in
+            ("help" | "--help")
+                hdd_help
+                HDD_JUMP=1
+                ;;
             ("check" | "status" | "--check" | "--status")
                 echo "     HDD status check requested."
                 HDD_OPER='-C'
                 ;;
+            ("temp" | "--temp")
+                echo "     HDD temperature check requested."
+                HDD_OPER='TEMP'
+                ;;
             ("standby" | "--standby")
                 echo "     HDD standby requested."
                 HDD_OPER='-y'
-                ;;
-            ("help" | "--help")
-                hdd_help
-                HDD_JUMP=1
                 ;;
             ("report")
                 # External command
@@ -367,7 +447,7 @@ function hdd() {
             HDD_DRIVES=$(hdd_get_drives ${@:$HDD_ARG_POS})
         fi
 
-        if [[ $HDD_EXCLUDE != "" ]]; then
+        if [[ $HDD_OPER != "TEMP" && $HDD_EXCLUDE != "" ]]; then
             HDD_DRIVES=$(echo $HDD_DRIVES | sed -e "s/$HDD_EXCLUDE//g" )
         fi
         echo "     $(font bold underline)Exceptions$(font reset):        $(font fg 241)$(hdd_printf $HDD_EXCLUDE)$(font reset)"
@@ -386,7 +466,11 @@ function hdd() {
             fi
 
             if [ $HDD_SUCCESS -eq 0 ]; then
-                hdd_execute $HDD_OPER ${(s/ /)HDD_DRIVES}
+                if [[ $HDD_OPER == "TEMP" ]]; then
+                    hdd_temperature ${(s/ /)HDD_DRIVES}
+                else
+                    hdd_execute $HDD_OPER ${(s/ /)HDD_DRIVES}
+                fi
                 local HDD_SUCCESS=$?
                 if [ $HDD_SUCCESS -ne 0 ]; then
                     hdd_no_operation "\n     $(font fg_red)Operation failed.$(font reset)"
@@ -406,12 +490,15 @@ function hdd() {
     unset -f hdd_get_partition_labels
     unset -f hdd_printf
     unset -f hdd_no_operation
+    unset -f hdd_get_scsi
+    unset -f hdd_get_nvme
     unset -f hdd_get_all
     unset -f hdd_get_drives
     unset -f hdd_get_exceptions
     unset -f hdd_get_permissions
     unset -f hdd_execute
     unset -f hdd_execute_external
+    unset -f hdd_temperature
     unset -f hdd_help
 
     echo ""     # Just some more spacing for those looks
