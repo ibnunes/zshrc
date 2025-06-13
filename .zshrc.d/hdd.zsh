@@ -275,7 +275,6 @@ function hdd() {
                 echo ""
                 eval "$2 ${@:4}"
             fi
-            unset -f $2
         else
             echo "$(font fg_red)hdd $1 is not available!$(font reset)"
         fi

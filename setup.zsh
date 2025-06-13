@@ -1,6 +1,6 @@
 #!/bin/zsh
 
-echo "ZSHRC Setup                                                     1.5.0"
+echo "ZSHRC Setup                                                     1.5.1"
 echo "──────────────────────────────────────────────────────────────────────────"
 echo "   Loading components…"
 
