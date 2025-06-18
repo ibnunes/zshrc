@@ -19,7 +19,7 @@ ZSHRC_FILES_ESSENTIAL=(
     "zsh"
     "hdd"
     "blkidf"
-    ".blkid_impl"
+    ".blkidf_impl"
     "alias"
     "mobaxterm"
 )
